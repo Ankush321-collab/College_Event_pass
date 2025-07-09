@@ -124,4 +124,5 @@ college-event-qr-system/
 
 ## License
 
-This project is licensed under the MIT License.
+This project is licensed under the Ankush Kumar Adhikari
+.
