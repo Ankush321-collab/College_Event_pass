@@ -1,0 +1,69 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Unique vibrant dark mode styles */
+html.dark body {
+  @apply bg-gradient-to-br from-[#0f2027] via-[#2c5364] to-[#232526] text-cyan-100 transition-colors duration-300;
+  background-attachment: fixed;
+}
+html.dark .bg-white {
+  background: rgba(30, 41, 59, 0.85) !important;
+  backdrop-filter: blur(8px) saturate(150%) !important;
+  border-radius: 1rem !important;
+  box-shadow: 0 4px 32px 0 rgba(0,255,255,0.10), 0 1.5px 6px 0 rgba(255,0,255,0.06) !important;
+}
+html.dark .text-gray-900 {
+  color: #e0eaff !important;
+}
+html.dark .text-gray-700 {
+  color: #b5bfff !important;
+}
+html.dark .shadow-lg, html.dark .shadow-md {
+  box-shadow: 0 6px 32px 0 rgba(0,255,255,0.13), 0 1.5px 6px 0 rgba(255,0,255,0.09) !important;
+}
+html.dark .border, html.dark .border-gray-200 {
+  border-color: #3f51b5 !important;
+}
+html.dark .hover\:bg-gray-100:hover, html.dark .hover\:bg-gray-50:hover {
+  background: rgba(58, 227, 255, 0.12) !important;
+}
+html.dark .bg-blue-600, html.dark .bg-blue-700 {
+  background: linear-gradient(90deg,#00f2fe,#4facfe 99%) !important;
+  color: #18192a !important;
+}
+html.dark .bg-green-600, html.dark .bg-green-700 {
+  background: linear-gradient(90deg,#43e97b,#38f9d7 99%) !important;
+  color: #18192a !important;
+}
+html.dark .bg-purple-100, html.dark .bg-orange-100, html.dark .bg-green-100, html.dark .bg-blue-100 {
+  background: linear-gradient(90deg,#fc00ff,#00dbde 99%) !important;
+  opacity: 0.7 !important;
+}
+html.dark input, html.dark textarea, html.dark select {
+  background: rgba(40, 54, 80, 0.8) !important;
+  color: #e0eaff !important;
+  border-color: #4facfe !important;
+}
+html.dark input:focus, html.dark textarea:focus, html.dark select:focus {
+  outline: none !important;
+  box-shadow: 0 0 0 2px #00f2fe, 0 0 12px 2px #fc00ff !important;
+}
+html.dark .ring-2, html.dark .focus\:ring-2:focus {
+  box-shadow: 0 0 0 2px #00f2fe, 0 0 12px 2px #fc00ff !important;
+}
+html.dark .text-blue-600 {
+  color: #00f2fe !important;
+}
+html.dark .text-green-600 {
+  color: #43e97b !important;
+}
+html.dark .text-purple-600 {
+  color: #fc00ff !important;
+}
+html.dark .text-orange-600 {
+  color: #ff8c00 !important;
+}
+html.dark .rounded-lg, html.dark .rounded-md {
+  border-radius: 1rem !important;
+}
