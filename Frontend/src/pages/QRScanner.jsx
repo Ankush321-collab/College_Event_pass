@@ -1,51 +1,101 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Html5QrcodeScanner } from 'html5-qrcode';
+import { Html5Qrcode } from 'html5-qrcode';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import { QrCode, CheckCircle, AlertCircle, Camera } from 'lucide-react';
+import { QrCode, CheckCircle, AlertCircle, Camera, Scan, RotateCw, Image, X } from 'lucide-react';
 
 const QRScanner = () => {
   const [scanner, setScanner] = useState(null);
-  const qrReaderRef = useRef(null);
   const [scanResult, setScanResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   const fileInputRef = useRef(null);
+  const [cameraError, setCameraError] = useState('');
+  const [cameraDevices, setCameraDevices] = useState([]);
+  const [selectedCameraId, setSelectedCameraId] = useState('');
+  const [testStream, setTestStream] = useState(null);
+  const testVideoRef = useRef(null);
+  const qrRegionId = "qr-reader";
 
-  // Start scanning automatically on mount
   useEffect(() => {
-    setIsScanning(true);
-    // eslint-disable-next-line
+    async function fetchCameras() {
+      try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const videoDevices = devices.filter(device => device.kind === 'videoinput');
+        setCameraDevices(videoDevices);
+        if (videoDevices.length > 0) {
+          setSelectedCameraId(videoDevices[0].deviceId);
+        } else {
+          setCameraError('No camera devices found.');
+        }
+      } catch (err) {
+        setCameraError('Unable to access camera devices.');
+      }
+    }
+    fetchCameras();
   }, []);
 
   useEffect(() => {
-    if (isScanning && qrReaderRef.current && !scanner) {
-      try {
-        const html5QrcodeScanner = new Html5QrcodeScanner(
-          "qr-reader",
-          { 
-            fps: 10, 
-            qrbox: { width: 250, height: 250 },
-            rememberLastUsedCamera: true
-          },
-          false
-        );
-        html5QrcodeScanner.render(onScanSuccess, onScanFailure);
-        setScanner(html5QrcodeScanner);
-      } catch (err) {
-        toast.error('Camera permission denied or not available.');
-      }
-    }
     return () => {
-      if (scanner) {
-        scanner.clear();
+      stopScanning();
+      if (testStream) {
+        testStream.getTracks().forEach(track => track.stop());
       }
     };
-    // eslint-disable-next-line
-  }, [isScanning, scanner]);
+  }, []);
 
-  const startScanning = () => {
+  const startScanning = async () => {
+    setCameraError('');
+    setScanResult(null);
     setIsScanning(true);
+    try {
+      const html5Qr = new Html5Qrcode(qrRegionId);
+      await html5Qr.start(
+        { deviceId: { exact: selectedCameraId } },
+        { fps: 10, qrbox: { width: 250, height: 250 } },
+        onScanSuccess,
+        onScanFailure
+      );
+      setScanner(html5Qr);
+    } catch (err) {
+      setCameraError('Camera start failed. ' + (err.message || err));
+      toast.error('Camera start failed.');
+    }
+  };
+
+  const stopScanning = async () => {
+    if (scanner) {
+      try {
+        await scanner.stop();
+        await scanner.clear();
+      } catch (err) {
+        console.error('Error stopping scanner:', err);
+      }
+      setScanner(null);
+    }
+    setIsScanning(false);
+  };
+
+  const onScanSuccess = async (decodedText, decodedResult) => {
+    setLoading(true);
+    try {
+      const response = await axios.post('http://localhost:5000/api/scan', {
+        qrCodeData: decodedText,
+      });
+      setScanResult({ success: true, data: response.data });
+      toast.success('Entry verified!');
+      stopScanning();
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || 'QR verification failed';
+      setScanResult({ success: false, message: errorMessage, data: error.response?.data });
+      toast.error(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const onScanFailure = (error) => {
+    console.log('Scan failure:', error);
   };
 
   const handleScanImageFile = async (event) => {
@@ -53,16 +103,14 @@ const QRScanner = () => {
     if (!file) return;
     setLoading(true);
     try {
-      const { Html5Qrcode } = await import('html5-qrcode');
-      const html5Qr = new Html5Qrcode('qr-reader');
+      const html5Qr = new Html5Qrcode(qrRegionId);
       const result = await html5Qr.scanFile(file, true);
       await onScanSuccess(result, null);
-      html5Qr.clear();
+      await html5Qr.clear();
     } catch (err) {
-      toast.error('Failed to scan image: ' + (err?.message || err));
+      toast.error('Image scan failed: ' + (err.message || err));
     } finally {
       setLoading(false);
-      // Reset input so same file can be selected again if needed
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
@@ -73,46 +121,24 @@ const QRScanner = () => {
     }
   };
 
-  const stopScanning = () => {
-    if (scanner) {
-      scanner.clear();
-      setScanner(null);
+  const testCameraDirect = async () => {
+    setCameraError('');
+    if (testStream) {
+      testStream.getTracks().forEach(track => track.stop());
+      setTestStream(null);
     }
-    setIsScanning(false);
-  };
-
-  const onScanSuccess = async (decodedText, decodedResult) => {
-    setLoading(true);
-    
     try {
-      const response = await axios.post('http://localhost:5000/api/scan', {
-        qrCodeData: decodedText
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { deviceId: selectedCameraId ? { exact: selectedCameraId } : undefined },
       });
-
-      setScanResult({
-        success: true,
-        data: response.data
-      });
-      
-      toast.success('Entry verified successfully!');
-      stopScanning();
-    } catch (error) {
-      const errorMessage = error.response?.data?.message || 'QR verification failed';
-      setScanResult({
-        success: false,
-        message: errorMessage,
-        data: error.response?.data
-      });
-      
-      toast.error(errorMessage);
-    } finally {
-      setLoading(false);
+      setTestStream(stream);
+      if (testVideoRef.current) {
+        testVideoRef.current.srcObject = stream;
+      }
+    } catch (err) {
+      setCameraError('Direct camera test failed: ' + (err.message || err));
+      toast.error('Direct camera test failed.');
     }
-  };
-
-  const onScanFailure = (error) => {
-    // Handle scan failure silently
-    console.log('Scan failed:', error);
   };
 
   const resetScanner = () => {
@@ -121,127 +147,138 @@ const QRScanner = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="max-w-4xl mx-auto p-6">
         <div className="text-center mb-8">
-          <QrCode className="h-16 w-16 text-blue-600 mx-auto mb-4" />
-          <h1 className="text-3xl font-bold text-gray-900">QR Code Scanner</h1>
-          <p className="text-gray-600 mt-2">Scan student QR passes to verify event entry</p>
+          <QrCode className="w-16 h-16 mx-auto text-blue-600 dark:text-blue-400" />
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">QR Code Scanner</h1>
+          <p className="text-gray-600 dark:text-gray-300 mt-2">Scan student QR passes to verify entry</p>
         </div>
 
-        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-          <div className="text-center">
-            {isScanning ? (
-              <div>
-                <div ref={qrReaderRef} id="qr-reader" style={{ width: 300, height: 300 }}></div>
-                <div className="flex justify-center gap-4 mt-4">
-                  <button
-                    onClick={stopScanning}
-                    className="bg-red-600 text-white px-6 py-3 rounded-md hover:bg-red-700 transition-colors"
-                  >
-                    Stop Scanning
-                  </button>
-                  <button
-                    onClick={triggerFileInput}
-                    className="bg-gray-600 text-white px-6 py-3 rounded-md hover:bg-gray-700 transition-colors"
-                  >
-                    Scan Image File
-                  </button>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    ref={fileInputRef}
-                    style={{ display: 'none' }}
-                    onChange={handleScanImageFile}
-                  />
-                </div>
-              </div>
+        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-md">
+          {cameraError && (
+            <div className="bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-300 p-4 rounded mb-4">
+              <p className="font-semibold">Camera Error</p>
+              <p>{cameraError}</p>
+            </div>
+          )}
+
+          {cameraDevices.length > 1 && (
+            <div className="mb-4">
+              <label className="block mb-2 font-medium">Select Camera</label>
+              <select
+                value={selectedCameraId}
+                onChange={(e) => setSelectedCameraId(e.target.value)}
+                className="w-full px-4 py-2 rounded border dark:bg-gray-700 dark:text-white"
+              >
+                {cameraDevices.map((device) => (
+                  <option key={device.deviceId} value={device.deviceId}>
+                    {device.label || 'Camera'}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          <div
+            id={qrRegionId}
+            className="mx-auto border-2 border-blue-300 rounded-xl"
+            style={{ width: '100%', maxWidth: 400, height: 300 }}
+          ></div>
+
+          <div className="flex flex-wrap justify-center gap-4 mt-6">
+            {!isScanning ? (
+              <button
+                onClick={startScanning}
+                className="flex items-center gap-2 bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
+              >
+                <Scan className="w-5 h-5" />
+                Start Scanning
+              </button>
             ) : (
-              <div>
-                <Camera className="h-24 w-24 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-600">Camera not active.</p>
-              </div>
+              <button
+                onClick={stopScanning}
+                className="flex items-center gap-2 bg-red-600 text-white px-6 py-2 rounded hover:bg-red-700"
+              >
+                <X className="w-5 h-5" />
+                Stop Scanning
+              </button>
             )}
+
+            <button
+              onClick={triggerFileInput}
+              className="flex items-center gap-2 bg-gray-600 text-white px-6 py-2 rounded hover:bg-gray-700"
+            >
+              <Image className="w-5 h-5" />
+              Scan Image
+            </button>
+
+            <input
+              type="file"
+              accept="image/*"
+              ref={fileInputRef}
+              onChange={handleScanImageFile}
+              className="hidden"
+            />
           </div>
         </div>
 
         {loading && (
-          <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-            <div className="flex items-center justify-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mr-3"></div>
-              <span className="text-gray-700">Verifying QR code...</span>
-            </div>
+          <div className="mt-6 flex items-center justify-center text-gray-700 dark:text-gray-300">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mr-2"></div>
+            Verifying QR code...
           </div>
         )}
 
         {scanResult && (
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-gray-900">Scan Result</h2>
-              <button
-                onClick={resetScanner}
-                className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-              >
-                Clear Result
-              </button>
-            </div>
-
+          <div className="mt-6 bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md">
             {scanResult.success ? (
-              <div className="border-l-4 border-green-400 bg-green-50 p-4 mb-4">
-                <div className="flex items-center">
-                  <CheckCircle className="h-6 w-6 text-green-600 mr-2" />
-                  <h3 className="text-lg font-medium text-green-800">Entry Verified!</h3>
-                </div>
-                
-                <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <h4 className="font-medium text-gray-900 mb-2">Student Information</h4>
-                    <p className="text-sm text-gray-600">Name: {scanResult.data.registration.studentId.name}</p>
-                    <p className="text-sm text-gray-600">Roll Number: {scanResult.data.registration.studentId.rollNumber}</p>
-                    <p className="text-sm text-gray-600">Email: {scanResult.data.registration.studentId.email}</p>
-                  </div>
-                  
-                  <div>
-                    <h4 className="font-medium text-gray-900 mb-2">Event Information</h4>
-                    <p className="text-sm text-gray-600">Event: {scanResult.data.registration.eventId.title}</p>
-                    <p className="text-sm text-gray-600">Venue: {scanResult.data.registration.eventId.venue}</p>
-                    <p className="text-sm text-gray-600">Date: {new Date(scanResult.data.registration.eventId.date).toLocaleDateString()}</p>
-                  </div>
+              <div className="text-green-600 dark:text-green-400">
+                <CheckCircle className="w-6 h-6 inline-block mr-2" />
+                <span>Entry Verified!</span>
+                <div className="mt-4 text-sm text-gray-800 dark:text-gray-200">
+                  <p>Name: {scanResult.data.registration.studentId.name}</p>
+                  <p>Roll: {scanResult.data.registration.studentId.rollNumber}</p>
+                  <p>Email: {scanResult.data.registration.studentId.email}</p>
                 </div>
               </div>
             ) : (
-              <div className="border-l-4 border-red-400 bg-red-50 p-4 mb-4">
-                <div className="flex items-center">
-                  <AlertCircle className="h-6 w-6 text-red-600 mr-2" />
-                  <h3 className="text-lg font-medium text-red-800">Verification Failed</h3>
-                </div>
-                <p className="text-red-700 mt-2">{scanResult.message}</p>
-                
-                {scanResult.data?.registration && (
-                  <div className="mt-4">
-                    <h4 className="font-medium text-gray-900 mb-2">Registration Details</h4>
-                    <p className="text-sm text-gray-600">Student: {scanResult.data.registration.studentId.name}</p>
-                    <p className="text-sm text-gray-600">Event: {scanResult.data.registration.eventId.title}</p>
-                    {scanResult.data.scannedAt && (
-                      <p className="text-sm text-gray-600">
-                        Previously scanned at: {new Date(scanResult.data.scannedAt).toLocaleString()}
-                      </p>
-                    )}
-                  </div>
-                )}
+              <div className="text-red-600 dark:text-red-400">
+                <AlertCircle className="w-6 h-6 inline-block mr-2" />
+                <span>Verification Failed</span>
+                <p className="mt-2">{scanResult.message}</p>
               </div>
             )}
 
-            <div className="flex justify-center">
+            <div className="mt-4">
               <button
                 onClick={startScanning}
-                className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition-colors"
+                className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
               >
-                Scan Another QR Code
+                <RotateCw className="w-4 h-4" />
+                Scan Another
               </button>
             </div>
           </div>
         )}
+
+        <div className="mt-6 text-center">
+          <button
+            onClick={testCameraDirect}
+            className="px-4 py-2 rounded bg-blue-200 text-blue-800 hover:bg-blue-300"
+          >
+            Test Camera Directly
+          </button>
+          {testStream && (
+            <video
+              ref={testVideoRef}
+              autoPlay
+              playsInline
+              className="mt-4 rounded border-2 border-blue-400"
+              style={{ width: 320, height: 240 }}
+            />
+          )}
+        </div>
       </div>
     </div>
   );

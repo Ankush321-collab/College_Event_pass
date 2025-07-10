@@ -1,19 +1,20 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Check, X, Loader2, Download } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 const AdminEventDetails = () => {
   const { eventId } = useParams();
   const [event, setEvent] = useState(null);
   const [registrations, setRegistrations] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
     fetchEvent();
     fetchRegistrations();
-    // eslint-disable-next-line
   }, [eventId]);
 
   const fetchEvent = async () => {
@@ -36,63 +37,217 @@ const AdminEventDetails = () => {
     }
   };
 
+  const exportToCSV = async () => {
+    setExporting(true);
+    try {
+      const response = await axios.get(
+        `http://localhost:5000/api/registrations/export/${eventId}`,
+        { responseType: 'blob' }
+      );
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `${event.title}_registrations.csv`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (error) {
+      console.error('Export failed:', error);
+    } finally {
+      setExporting(false);
+    }
+  };
+
   return (
-    <div className="max-w-4xl mx-auto py-8 px-4">
-      <button
-        className="flex items-center mb-6 text-blue-600 hover:underline"
-        onClick={() => navigate(-1)}
-      >
-        <ArrowLeft className="h-5 w-5 mr-1" /> Back
-      </button>
+    <div className="max-w-6xl mx-auto py-8 px-4 sm:px-6 lg:px-8 min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
+      {/* Header with back button */}
+      <div className="flex items-center justify-between mb-8">
+        <motion.button
+          whileHover={{ x: -3 }}
+          onClick={() => navigate(-1)}
+          className="flex items-center text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors duration-200"
+        >
+          <ArrowLeft className="h-5 w-5 mr-2" />
+          Back to Events
+        </motion.button>
+        
+        {event && (
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={exportToCSV}
+            disabled={exporting || registrations.length === 0}
+            className={`flex items-center px-4 py-2 rounded-lg ${
+              exporting || registrations.length === 0
+                ? 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed'
+                : 'bg-green-600 hover:bg-green-700 text-white shadow-md hover:shadow-lg'
+            } transition-all duration-200`}
+          >
+            {exporting ? (
+              <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+            ) : (
+              <Download className="h-5 w-5 mr-2" />
+            )}
+            Export CSV
+          </motion.button>
+        )}
+      </div>
+
+      {/* Event Details Card */}
       {event && (
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold mb-2">{event.title}</h2>
-          <p className="text-gray-600 mb-1">Date: {new Date(event.date).toLocaleString()}</p>
-          <p className="text-gray-600 mb-1">Venue: {event.venue}</p>
-          <p className="text-gray-600 mb-1">Capacity: {event.capacity}</p>
-        </div>
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-8 hover:shadow-xl dark:hover:shadow-gray-700/50 transition-shadow duration-300"
+        >
+          <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-3">
+            {event.title}
+          </h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="flex items-center">
+              <div className="bg-blue-100 dark:bg-blue-900/30 rounded-lg p-3 mr-4">
+                <Calendar className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Date & Time</p>
+                <p className="font-medium text-gray-900 dark:text-white">
+                  {new Date(event.date).toLocaleString('en-US', {
+                    weekday: 'short',
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex items-center">
+              <div className="bg-purple-100 dark:bg-purple-900/30 rounded-lg p-3 mr-4">
+                <MapPin className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Venue</p>
+                <p className="font-medium text-gray-900 dark:text-white">{event.venue}</p>
+              </div>
+            </div>
+            
+            <div className="flex items-center">
+              <div className="bg-green-100 dark:bg-green-900/30 rounded-lg p-3 mr-4">
+                <Users className="h-6 w-6 text-green-600 dark:text-green-400" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Capacity</p>
+                <p className="font-medium text-gray-900 dark:text-white">
+                  {event.currentRegistrations}/{event.capacity} ({Math.round((event.currentRegistrations / event.capacity) * 100)}%)
+                </p>
+              </div>
+            </div>
+          </div>
+        </motion.div>
       )}
-      <div className="bg-white rounded shadow p-6">
-        <h3 className="text-xl font-semibold mb-4">Registered Students</h3>
+
+      {/* Registrations Table */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, delay: 0.1 }}
+        className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden transition-shadow duration-300 hover:shadow-xl dark:hover:shadow-gray-700/50"
+      >
+        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+            Registered Students ({registrations.length})
+          </h3>
+        </div>
+
         {loading ? (
-          <div>Loading...</div>
+          <div className="flex justify-center items-center p-12">
+            <Loader2 className="h-8 w-8 text-blue-600 dark:text-blue-400 animate-spin" />
+          </div>
         ) : registrations.length === 0 ? (
-          <div className="text-gray-500">No students have registered for this event yet.</div>
+          <div className="text-center p-12 text-gray-500 dark:text-gray-400">
+            No students have registered for this event yet.
+          </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="min-w-full table-auto border">
-              <thead>
-                <tr className="bg-gray-100">
-                  <th className="px-4 py-2 border">#</th>
-                  <th className="px-4 py-2 border">Name</th>
-                  <th className="px-4 py-2 border">Email</th>
-                  <th className="px-4 py-2 border">Roll Number</th>
-                  <th className="px-4 py-2 border">Registered At</th>
-                  <th className="px-4 py-2 border">Scanned</th>
+            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+              <thead className="bg-gray-50 dark:bg-gray-700">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    #
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    Student
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    Email
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    Roll No
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    Registered At
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    Status
+                  </th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                 {registrations.map((reg, idx) => (
-                  <tr key={reg._id} className="text-center">
-                    <td className="px-4 py-2 border">{idx + 1}</td>
-                    <td className="px-4 py-2 border">{reg.studentId?.name || '-'}</td>
-                    <td className="px-4 py-2 border">{reg.studentId?.email || '-'}</td>
-                    <td className="px-4 py-2 border">{reg.studentId?.rollNumber || '-'}</td>
-                    <td className="px-4 py-2 border">{new Date(reg.createdAt).toLocaleString()}</td>
-                    <td className="px-4 py-2 border">
-                      {reg.isScanned ? (
-                        <span className="text-green-600 font-semibold">Yes</span>
-                      ) : (
-                        <span className="text-gray-400">No</span>
-                      )}
+                  <motion.tr
+                    key={reg._id}
+                    whileHover={{ backgroundColor: 'rgba(59, 130, 246, 0.05)' }}
+                    className="transition-colors duration-150"
+                  >
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                      {idx + 1}
                     </td>
-                  </tr>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                      {reg.studentId?.name || '-'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                      {reg.studentId?.email || '-'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                      {reg.studentId?.rollNumber || '-'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                      {new Date(reg.createdAt).toLocaleString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span
+                        className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                          reg.isScanned
+                            ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                            : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+                        }`}
+                      >
+                        {reg.isScanned ? (
+                          <span className="flex items-center">
+                            <Check className="h-3 w-3 mr-1" /> Scanned
+                          </span>
+                        ) : (
+                          <span className="flex items-center">
+                            <X className="h-3 w-3 mr-1" /> Pending
+                          </span>
+                        )}
+                      </span>
+                    </td>
+                  </motion.tr>
                 ))}
               </tbody>
             </table>
           </div>
         )}
-      </div>
+      </motion.div>
     </div>
   );
 };

@@ -1,109 +1,164 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Menu, X, Calendar, QrCode, User, LogOut, Settings, Sun, Moon } from 'lucide-react';
+import { Menu, X, Calendar, QrCode, User, LogOut, Settings, Sun, Moon, ChevronDown } from 'lucide-react';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [theme, setTheme] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('theme') || 'light';
-    }
-    return 'light';
-  });
-
-  React.useEffect(() => {
-    if (theme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-    localStorage.setItem('theme', theme);
-  }, [theme]);
-
-  const toggleTheme = () => {
-    setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
-  };
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [theme, setTheme] = useState('light');
+  const [scrolled, setScrolled] = useState(false);
 
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+
+  // Handle scroll effect
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 10);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Handle theme
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    setTheme(savedTheme);
+    document.documentElement.classList.toggle('dark', savedTheme === 'dark');
+  }, []);
+
+  const toggleTheme = () => {
+    const newTheme = theme === 'dark' ? 'light' : 'dark';
+    setTheme(newTheme);
+    localStorage.setItem('theme', newTheme);
+    document.documentElement.classList.toggle('dark', newTheme === 'dark');
+  };
 
   const handleLogout = () => {
     logout();
     navigate('/');
     setIsOpen(false);
+    setIsDropdownOpen(false);
   };
 
   return (
-    <nav className="bg-white shadow-lg fixed w-full top-0 z-50">
+    <nav className={`fixed w-full top-0 z-50 transition-all duration-300 ${
+      scrolled 
+        ? 'bg-white/90 dark:bg-gray-900/90 backdrop-blur-md shadow-md' 
+        : 'bg-white dark:bg-gray-900'
+    }`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
-          <div className="flex items-center">
-            <Link to="/" className="flex items-center space-x-2">
-              <QrCode className="h-8 w-8 text-blue-600" />
-              <span className="text-xl font-bold text-gray-800">EventPass</span>
-            </Link>
-          </div>
+        <div className="flex justify-between h-16 items-center">
+          {/* Logo */}
+          <Link 
+            to="/" 
+            className="flex items-center space-x-2 group"
+            onClick={() => setIsOpen(false)}
+          >
+            <div className="relative">
+              <QrCode className="h-8 w-8 text-blue-600 dark:text-blue-400 group-hover:text-blue-700 dark:group-hover:text-blue-300 transition-colors duration-300" />
+              <div className="absolute -inset-1 bg-blue-100 dark:bg-blue-900/30 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 -z-10"></div>
+            </div>
+            <span className="text-xl font-bold text-gray-800 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300">
+              EventPass
+            </span>
+          </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-8">
+          <div className="hidden md:flex items-center space-x-6">
+            {/* Theme Toggle */}
             <button
               onClick={toggleTheme}
-              className="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-300 transform hover:scale-110"
               aria-label="Toggle dark mode"
             >
-              {theme === 'dark' ? <Sun className="h-5 w-5 text-yellow-500" /> : <Moon className="h-5 w-5 text-gray-700" />}
+              {theme === 'dark' ? (
+                <Sun className="h-5 w-5 text-yellow-400 hover:text-yellow-300 transition-colors" />
+              ) : (
+                <Moon className="h-5 w-5 text-gray-600 hover:text-gray-800 transition-colors" />
+              )}
             </button>
-            <Link to="/" className="text-gray-700 hover:text-blue-600 transition-colors">
+
+            {/* Navigation Links */}
+            <Link 
+              to="/" 
+              className="relative px-3 py-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-300 group"
+            >
               Events
+              <span className="absolute bottom-0 left-0 h-0.5 w-0 bg-blue-600 dark:bg-blue-400 transition-all duration-300 group-hover:w-full"></span>
             </Link>
             
             {user ? (
               <>
                 {user.role === 'admin' ? (
                   <>
-                    <Link to="/admin" className="text-gray-700 hover:text-blue-600 transition-colors">
-                      Admin Dashboard
+                    <Link 
+                      to="/admin" 
+                      className="relative px-3 py-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-300 group"
+                    >
+                      Admin
+                      <span className="absolute bottom-0 left-0 h-0.5 w-0 bg-blue-600 dark:bg-blue-400 transition-all duration-300 group-hover:w-full"></span>
                     </Link>
-                    <Link to="/admin/scan" className="text-gray-700 hover:text-blue-600 transition-colors">
-                      QR Scanner
+                    <Link 
+                      to="/admin/scan" 
+                      className="relative px-3 py-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-300 group"
+                    >
+                      Scanner
+                      <span className="absolute bottom-0 left-0 h-0.5 w-0 bg-blue-600 dark:bg-blue-400 transition-all duration-300 group-hover:w-full"></span>
                     </Link>
                   </>
                 ) : (
-                  <Link to="/dashboard" className="text-gray-700 hover:text-blue-600 transition-colors">
-                    My Dashboard
+                  <Link 
+                    to="/dashboard" 
+                    className="relative px-3 py-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-300 group"
+                  >
+                    Dashboard
+                    <span className="absolute bottom-0 left-0 h-0.5 w-0 bg-blue-600 dark:bg-blue-400 transition-all duration-300 group-hover:w-full"></span>
                   </Link>
                 )}
                 
-                <div className="relative group">
-                  <button className="flex items-center space-x-2 text-gray-700 hover:text-blue-600 transition-colors">
-                    <User className="h-5 w-5" />
-                    <span>{user.name}</span>
+                {/* User Dropdown */}
+                <div className="relative">
+                  <button 
+                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                    className="flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-300 group"
+                  >
+                    <div className="h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center text-blue-600 dark:text-blue-400">
+                      <User className="h-5 w-5" />
+                    </div>
+                    <span className="text-gray-700 dark:text-gray-300">{user.name}</span>
+                    <ChevronDown className={`h-4 w-4 text-gray-500 dark:text-gray-400 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} />
                   </button>
                   
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
-                    <div className="px-4 py-2 border-b">
-                      <p className="text-sm font-medium text-gray-900">{user.name}</p>
-                      <p className="text-xs text-gray-500">{user.email}</p>
+                  {isDropdownOpen && (
+                    <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-xl py-1 border border-gray-200 dark:border-gray-700 transition-all duration-300 origin-top-right animate-scaleIn">
+                      <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+                        <p className="text-sm font-medium text-gray-900 dark:text-white">{user.name}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{user.email}</p>
+                      </div>
+                      <button
+                        onClick={handleLogout}
+                        className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2 transition-colors duration-200"
+                      >
+                        <LogOut className="h-4 w-4" />
+                        <span>Logout</span>
+                      </button>
                     </div>
-                    <button
-                      onClick={handleLogout}
-                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
-                    >
-                      <LogOut className="h-4 w-4" />
-                      <span>Logout</span>
-                    </button>
-                  </div>
+                  )}
                 </div>
               </>
             ) : (
               <>
-                <Link to="/login" className="text-gray-700 hover:text-blue-600 transition-colors">
+                <Link 
+                  to="/login" 
+                  className="px-3 py-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-300"
+                >
                   Login
                 </Link>
                 <Link 
                   to="/register" 
-                  className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
+                  className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-lg hover:from-blue-700 hover:to-blue-600 transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg"
                 >
                   Register
                 </Link>
@@ -112,100 +167,109 @@ const Navbar = () => {
           </div>
 
           {/* Mobile menu button */}
-          <button
-            onClick={toggleTheme}
-            className="md:hidden p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors mr-2"
-            aria-label="Toggle dark mode"
-          >
-            {theme === 'dark' ? <Sun className="h-6 w-6 text-yellow-500" /> : <Moon className="h-6 w-6 text-gray-700" />}
-          </button>
-          <div className="md:hidden flex items-center">
+          <div className="flex md:hidden items-center space-x-2">
+            <button
+              onClick={toggleTheme}
+              className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-300"
+              aria-label="Toggle dark mode"
+            >
+              {theme === 'dark' ? (
+                <Sun className="h-6 w-6 text-yellow-400" />
+              ) : (
+                <Moon className="h-6 w-6 text-gray-600" />
+              )}
+            </button>
             <button
               onClick={() => setIsOpen(!isOpen)}
-              className="text-gray-700 hover:text-blue-600 transition-colors"
+              className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-300"
+              aria-label="Toggle menu"
             >
-              {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              {isOpen ? (
+                <X className="h-6 w-6 text-gray-700 dark:text-gray-300" />
+              ) : (
+                <Menu className="h-6 w-6 text-gray-700 dark:text-gray-300" />
+              )}
             </button>
           </div>
         </div>
       </div>
 
       {/* Mobile Navigation */}
-      {isOpen && (
-        <div className="md:hidden">
-          <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white border-t">
-            <Link
-              to="/"
-              className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 rounded-md"
-              onClick={() => setIsOpen(false)}
-            >
-              Events
-            </Link>
-            
-            {user ? (
-              <>
-                {user.role === 'admin' ? (
-                  <>
-                    <Link
-                      to="/admin"
-                      className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 rounded-md"
-                      onClick={() => setIsOpen(false)}
-                    >
-                      Admin Dashboard
-                    </Link>
-                    <Link
-                      to="/admin/scan"
-                      className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 rounded-md"
-                      onClick={() => setIsOpen(false)}
-                    >
-                      QR Scanner
-                    </Link>
-                  </>
-                ) : (
+      <div className={`md:hidden transition-all duration-300 ease-in-out overflow-hidden ${
+        isOpen ? 'max-h-screen opacity-100' : 'max-h-0 opacity-0'
+      }`}>
+        <div className="px-2 pt-2 pb-4 space-y-1 sm:px-3 bg-white dark:bg-gray-800 shadow-lg">
+          <Link
+            to="/"
+            className="block px-3 py-3 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-300"
+            onClick={() => setIsOpen(false)}
+          >
+            Events
+          </Link>
+          
+          {user ? (
+            <>
+              {user.role === 'admin' ? (
+                <>
                   <Link
-                    to="/dashboard"
-                    className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 rounded-md"
+                    to="/admin"
+                    className="block px-3 py-3 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-300"
                     onClick={() => setIsOpen(false)}
                   >
-                    My Dashboard
+                    Admin Dashboard
                   </Link>
-                )}
-                
-                <div className="border-t pt-2">
-                  <div className="px-3 py-2">
-                    <p className="text-sm font-medium text-gray-900">{user.name}</p>
-                    <p className="text-xs text-gray-500">{user.email}</p>
-                  </div>
-                  <button
-                    onClick={handleLogout}
-                    className="w-full text-left px-3 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 rounded-md flex items-center space-x-2"
+                  <Link
+                    to="/admin/scan"
+                    className="block px-3 py-3 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-300"
+                    onClick={() => setIsOpen(false)}
                   >
-                    <LogOut className="h-4 w-4" />
-                    <span>Logout</span>
-                  </button>
+                    QR Scanner
+                  </Link>
+                </>
+              ) : (
+                <Link
+                  to="/dashboard"
+                  className="block px-3 py-3 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-300"
+                  onClick={() => setIsOpen(false)}
+                >
+                  My Dashboard
+                </Link>
+              )}
+              
+              <div className="border-t border-gray-200 dark:border-gray-700 pt-2 mt-2">
+                <div className="px-3 py-3">
+                  <p className="text-sm font-medium text-gray-900 dark:text-white">{user.name}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{user.email}</p>
                 </div>
-              </>
-            ) : (
-              <>
-                <Link
-                  to="/login"
-                  className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 rounded-md"
-                  onClick={() => setIsOpen(false)}
+                <button
+                  onClick={handleLogout}
+                  className="w-full text-left px-3 py-3 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2 transition-colors duration-300"
                 >
-                  Login
-                </Link>
-                <Link
-                  to="/register"
-                  className="block px-3 py-2 text-base font-medium bg-blue-600 text-white hover:bg-blue-700 rounded-md"
-                  onClick={() => setIsOpen(false)}
-                >
-                  Register
-                </Link>
-              </>
-            )}
-          </div>
+                  <LogOut className="h-5 w-5" />
+                  <span>Logout</span>
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <Link
+                to="/login"
+                className="block px-3 py-3 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-300"
+                onClick={() => setIsOpen(false)}
+              >
+                Login
+              </Link>
+              <Link
+                to="/register"
+                className="block px-3 py-3 text-center bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-lg hover:from-blue-700 hover:to-blue-600 transition-all duration-300 shadow-md"
+                onClick={() => setIsOpen(false)}
+              >
+                Register
+              </Link>
+            </>
+          )}
         </div>
-      )}
+      </div>
     </nav>
   );
 };
