@@ -1,57 +1,59 @@
-# EventPass – College Event Manager
+# 🚀 EventPass – College Event Manager
 
-![Dashboard Screenshot](./Frontend/public/dashboard-screenshot.png)
-
-## Overview
-
-**EventPass** is a full-stack web application for managing college events, registrations, and attendance using QR codes. It provides a seamless experience for both students and administrators, allowing for easy event creation, registration, QR pass generation, and real-time attendance tracking.
+![Dashboard Screenshot](Frontend/public/dashboard-screenshot.png)
 
 ---
 
-## Features
+## 🎯 What is EventPass?
 
-- **User Authentication:** Secure login and registration for students and admins.
-- **Profile Management:** Users can upload a profile picture, view, and edit their details.
-- **Event Management:** Admins can create, edit, and delete events with poster uploads.
-- **Student Dashboard:** Students can view upcoming, attended, and registered events, and download QR passes.
-- **QR Code Attendance:** Admins can scan QR codes to mark attendance, with instant user detail popups.
-- **Admin Dashboard:** View all events, registrations, export CSV, and see registered students with profile images.
-- **Responsive UI:** Modern, mobile-friendly design with light/dark mode toggle.
-- **Persistent Sessions:** User data and tokens are stored securely for persistent login.
+EventPass is a modern web app for managing college events. Students can register for events, get QR passes, and admins can manage everything from a beautiful dashboard.
 
 ---
 
-## Tech Stack
+## ✨ Features
 
-- **Frontend:**  
-  - React.js (Vite)
-  - Tailwind CSS (with custom themes)
-  - React Router
-  - Lucide React Icons
-  - html5-qrcode (for QR scanning)
-  - Axios (API requests)
-  - React Hot Toast (notifications)
-
-- **Backend:**  
-  - Express.js
-  - MongoDB (Mongoose)
-  - Multer (file uploads)
-  - JWT (authentication)
-  - QRCode (QR code generation)
-  - json2csv (CSV export)
+- 🔐 **Secure Login & Registration** for students and admins
+- 🖼️ **Profile Management** (upload your photo, edit details)
+- 🗓️ **Event Management** (create, edit, delete events with posters)
+- 🎟️ **QR Passes** for instant event entry
+- 📱 **QR Code Scanning** for real-time attendance
+- 📊 **Admin Dashboard** (see all events, registrations, export CSV)
+- 🌗 **Light & Dark Mode**
+- 💾 **Persistent Login** (remembers you)
 
 ---
 
-## Key Packages
+## 🛠️ Tech Stack
 
-- **html5-qrcode:** Enables in-browser QR code scanning for attendance.
-- **Multer:** Handles image uploads for event posters and user profile pictures.
-- **QRCode:** Generates QR codes for event passes.
-- **json2csv:** Exports registration data as CSV for admins.
+- **Frontend:**
+  - ⚛️ React (Vite)
+  - 🎨 Tailwind CSS
+  - 🧭 React Router
+  - 🖼️ Lucide Icons
+  - 📷 html5-qrcode (QR scanning)
+  - 🔥 React Hot Toast (notifications)
+  - 🔗 Axios (API requests)
+
+- **Backend:**
+  - 🏃 Express.js
+  - 🍃 MongoDB (Mongoose)
+  - 🖼️ Multer (file uploads)
+  - 🔑 JWT (auth)
+  - 📦 QRCode (QR generation)
+  - 📄 json2csv (CSV export)
 
 ---
 
-## Project Structure
+## 📦 Key Packages
+
+- `html5-qrcode` – In-browser QR code scanning
+- `multer` – Image uploads
+- `qrcode` – QR code generation
+- `json2csv` – CSV export for admins
+
+---
+
+## 📁 Project Structure
 
 ```
 college/
@@ -61,68 +63,59 @@ college/
     middleware/
     uploads/
     server.js
-    ...
   Frontend/
     src/
       components/
       pages/
       context/
-      ...
     public/
       dashboard-screenshot.png
-    ...
   README.md
 ```
 
 ---
 
-## Screenshots
+## 🖼️ Screenshots
 
-### Student Dashboard
+### Admin Dashboard
+![Admin Dashboard](Frontend/public/admindashboard.png)
 
-![Student Dashboard](./Frontend/public/dashboard-screenshot.png)
+### User Dashboard
+![User Dashboard](Frontend/public/userdashboard.png)
 
 ---
 
-## Getting Started
+## ⚡ Quick Start
 
-### Prerequisites
-
-- Node.js (v16+ recommended)
+### 1️⃣ Prerequisites
+- Node.js (v16+)
 - MongoDB (local or Atlas)
 
-### 1. Clone the Repository
+### 2️⃣ Installation
 
 ```bash
-git clone https://github.com/yourusername/eventpass.git
-cd eventpass
+# Clone the repo
+$ git clone https://github.com/yourusername/eventpass.git
+$ cd eventpass
+
+# Backend setup
+$ cd backend
+$ npm install
+$ cp .env.example .env  # Add your MongoDB URI and JWT secret
+$ npm start
+
+# Frontend setup
+$ cd ../Frontend
+$ npm install
+$ npm run dev
 ```
 
-### 2. Backend Setup
-
-```bash
-cd backend
-npm install
-# Create a .env file with your MongoDB URI and JWT secret
-cp .env.example .env
-npm start
-```
-
-- The backend runs on `http://localhost:5000` by default.
-
-### 3. Frontend Setup
-
-```bash
-cd ../Frontend
-npm install
-npm run dev
-```
-
-- The frontend runs on `http://localhost:5173` by default.
+- Backend: [http://localhost:5000](http://localhost:5000)
+- Frontend: [http://localhost:5173](http://localhost:5173)
 
 ---
 
-## Environment Variables
+## ⚙️ Environment Variables
 
 **Backend (.env):**
 ```
@@ -132,30 +125,36 @@ JWT_SECRET=your_jwt_secret
 
 ---
 
-## Usage
+## 👩‍💻 Usage
 
-- **Students:** Register, log in, view events, register for events, and download QR passes.
-- **Admins:** Log in, create/edit/delete events, view registrations, scan QR codes for attendance, and export data.
-
----
-
-## How It Works
-
-- **Registration:** Students register and upload a profile picture.
-- **Event Creation:** Admins create events with details and poster images.
-- **QR Pass Generation:** Upon registration, students receive a unique QR code for each event.
-- **Attendance:** Admins scan QR codes at the event entrance; the system verifies and marks attendance, showing user details in a modal.
-- **Profile Management:** Users can update their profile and picture at any time.
+- **Students:** Register, log in, view/register for events, download QR passes.
+- **Admins:** Log in, create/edit/delete events, view registrations, scan QR codes, export data.
 
 ---
 
-## Contributing
+## 🧭 How It Works
 
-Pull requests are welcome! For major changes, please open an issue first to discuss what you would like to change.
+1. **Register/Login** – Students and admins sign up and upload a profile picture.
+2. **Create Events** – Admins add events with details and posters.
+3. **Register for Events** – Students register and get a unique QR code.
+4. **Scan QR at Entry** – Admins scan QR codes to mark attendance and see user details instantly.
+5. **Profile Management** – Users can update their info and photo anytime.
 
 ---
 
-## License
+## 🤖 AI Prompt for Screenshot
+
+> "Create a beautiful dashboard UI for a college event management app. The design should feature a modern dark mode, a sticky navbar with a logo and user profile, event stats cards, and a section showing event passes with QR codes. Use gradients, rounded cards, and clean typography."
+
+---
+
+## 🤝 Contributing
+
+Pull requests are welcome! For major changes, open an issue first to discuss what you want to change.
+
+---
+
+## 📄 License
 
 [MIT](LICENSE)
 
@@ -166,9 +165,4 @@ Open an issue or contact the maintainer.
 
 ---
 
-> _This project was built with Express, React, MongoDB, html5-qrcode, and lots of love for seamless college event management!_
-
----
-
-**Tip:**  
-Replace `./Frontend/public/dashboard-screenshot.png` with the actual path to your dashboard screenshot, or upload your screenshot to the `public` folder and update the path accordingly. 
+> _Built with Express, React, MongoDB, html5-qrcode, and lots of love for seamless college event management!_ 
