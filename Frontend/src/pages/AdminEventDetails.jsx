@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { ArrowLeft, Check, X, Loader2, Download } from 'lucide-react';
+import { ArrowLeft, Check, X, Loader2, Download, Calendar, MapPin, Users } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const AdminEventDetails = () => {
@@ -57,6 +57,15 @@ const AdminEventDetails = () => {
       setExporting(false);
     }
   };
+
+  const getProfilePicUrl = (profilePic) => {
+    if (!profilePic) return '/default-avatar.png';
+    if (profilePic.startsWith('/uploads/')) {
+      return `http://localhost:5000${profilePic}`;
+    }
+    return profilePic;
+  };
+  const [selectedUser, setSelectedUser] = useState(null);
 
   return (
     <div className="max-w-6xl mx-auto py-8 px-4 sm:px-6 lg:px-8 min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
@@ -200,12 +209,19 @@ const AdminEventDetails = () => {
                   <motion.tr
                     key={reg._id}
                     whileHover={{ backgroundColor: 'rgba(59, 130, 246, 0.05)' }}
-                    className="transition-colors duration-150"
+                    className="transition-colors duration-150 cursor-pointer"
+                    onClick={() => setSelectedUser(reg.studentId)}
                   >
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
                       {idx + 1}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white flex items-center gap-2">
+                      <img
+                        src={getProfilePicUrl(reg.studentId?.profilePic)}
+                        alt="Profile"
+                        className="h-8 w-8 rounded-full object-cover border border-gray-300 dark:border-gray-700"
+                        onError={e => { e.target.onerror = null; e.target.src = '/default-avatar.png'; }}
+                      />
                       {reg.studentId?.name || '-'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
@@ -248,6 +264,29 @@ const AdminEventDetails = () => {
           </div>
         )}
       </motion.div>
+
+      {/* User Detail Modal */}
+      {selectedUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl p-8 w-full max-w-md relative">
+            <button onClick={() => setSelectedUser(null)} className="absolute top-2 right-2 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 text-2xl">✕</button>
+            <div className="flex flex-col items-center mb-4">
+              <img
+                src={getProfilePicUrl(selectedUser.profilePic)}
+                alt="Profile"
+                className="h-24 w-24 rounded-full object-cover border-2 border-blue-500 dark:border-blue-400 mb-2"
+                onError={e => { e.target.onerror = null; e.target.src = '/default-avatar.png'; }}
+              />
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-1">{selectedUser.name}</h3>
+              <p className="text-gray-500 dark:text-gray-300">{selectedUser.email}</p>
+              {selectedUser.rollNumber && (
+                <p className="text-gray-500 dark:text-gray-300">Roll No: {selectedUser.rollNumber}</p>
+              )}
+            </div>
+            {/* Add more user details here if needed */}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

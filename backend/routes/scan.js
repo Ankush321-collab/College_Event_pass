@@ -24,7 +24,7 @@ router.post('/', authenticateToken, requireAdmin, async (req, res) => {
       eventId: decodedData.eventId,
       qrCodeData
     }).populate([
-      { path: 'studentId', select: 'name email rollNumber' },
+      { path: 'studentId', select: 'name email rollNumber profilePic' },
       { path: 'eventId', select: 'title date venue' }
     ]);
 

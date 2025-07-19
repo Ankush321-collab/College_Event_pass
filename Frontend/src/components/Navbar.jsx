@@ -2,15 +2,36 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Menu, X, Calendar, QrCode, User, LogOut, Settings, Sun, Moon, ChevronDown } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
   const [theme, setTheme] = useState('light');
   const [scrolled, setScrolled] = useState(false);
+  const { user, logout, updateProfile } = useAuth();
+  const [profileForm, setProfileForm] = useState({
+    name: user?.name || '',
+    email: user?.email || '',
+    rollNumber: user?.rollNumber || '',
+  });
+  const [profilePicPreview, setProfilePicPreview] = useState(user?.profilePic || null);
+  const [profilePicFile, setProfilePicFile] = useState(null);
+  const [saving, setSaving] = useState(false);
 
-  const { user, logout } = useAuth();
   const navigate = useNavigate();
+
+  const getProfilePicUrl = (profilePic) => {
+    if (!profilePic) return '/default-avatar.png';
+    if (profilePic.startsWith('/uploads/')) {
+      return `http://localhost:5000${profilePic}`;
+    }
+    return profilePic;
+  };
+
+  const profilePicUrl = getProfilePicUrl(user?.profilePic);
+  console.log('Navbar profilePicUrl:', profilePicUrl);
 
   // Handle scroll effect
   useEffect(() => {
@@ -42,8 +63,40 @@ const Navbar = () => {
     setIsDropdownOpen(false);
   };
 
+  const handleProfileChange = (e) => {
+    setProfileForm({ ...profileForm, [e.target.name]: e.target.value });
+  };
+
+  const handleProfilePicChange = (e) => {
+    const file = e.target.files[0];
+    setProfilePicFile(file);
+    if (file) {
+      setProfilePicPreview(URL.createObjectURL(file));
+    }
+  };
+
+  const handleProfileSave = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    const data = new FormData();
+    data.append('name', profileForm.name);
+    data.append('email', profileForm.email);
+    if (user.role === 'student') data.append('rollNumber', profileForm.rollNumber);
+    if (profilePicFile) data.append('profilePic', profilePicFile);
+    const result = await updateProfile(data);
+    setSaving(false);
+    if (result.success) {
+      toast.success('Profile updated!');
+      setShowProfile(false);
+    } else {
+      toast.error(result.message || 'Failed to update profile');
+    }
+  };
+
+  console.log('Navbar user:', user);
+
   return (
-    <nav className={`fixed w-full top-0 z-50 transition-all duration-300 ${
+    <nav className={`sticky fixed w-full top-0 z-50 transition-all duration-300 ${
       scrolled 
         ? 'bg-white/90 dark:bg-gray-900/90 backdrop-blur-md shadow-md' 
         : 'bg-white dark:bg-gray-900'
@@ -124,8 +177,12 @@ const Navbar = () => {
                     onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                     className="flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-300 group"
                   >
-                    <div className="h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center text-blue-600 dark:text-blue-400">
-                      <User className="h-5 w-5" />
+                    <div className="h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center text-blue-600 dark:text-blue-400 overflow-hidden">
+                      {user.profilePic ? (
+                        <img src={profilePicUrl + '?' + Date.now()} alt="Profile" className="h-8 w-8 rounded-full object-cover" onError={e => { e.target.onerror = null; e.target.src = '/default-avatar.png'; }} />
+                      ) : (
+                        <User className="h-5 w-5" />
+                      )}
                     </div>
                     <span className="text-gray-700 dark:text-gray-300">{user.name}</span>
                     <ChevronDown className={`h-4 w-4 text-gray-500 dark:text-gray-400 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} />
@@ -137,6 +194,13 @@ const Navbar = () => {
                         <p className="text-sm font-medium text-gray-900 dark:text-white">{user.name}</p>
                         <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{user.email}</p>
                       </div>
+                      <button
+                        onClick={() => { navigate('/profile'); setIsDropdownOpen(false); }}
+                        className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2 transition-colors duration-200"
+                      >
+                        <Settings className="h-4 w-4" />
+                        <span>View Profile</span>
+                      </button>
                       <button
                         onClick={handleLogout}
                         className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2 transition-colors duration-200"

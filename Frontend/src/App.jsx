@@ -13,6 +13,7 @@ import QRScanner from './pages/QRScanner';
 import CreateEvent from './pages/CreateEvent';
 import AdminEventDetails from './pages/AdminEventDetails';
 import ProtectedRoute from './components/ProtectedRoute';
+import Profile from './pages/Profile';
 
 function App() {
   return (
@@ -54,6 +55,14 @@ function App() {
                   </ProtectedRoute>
                 } 
               />
+              <Route
+                path="/admin/edit-event/:eventId"
+                element={
+                  <ProtectedRoute adminOnly>
+                    <CreateEvent />
+                  </ProtectedRoute>
+                }
+              />
               <Route 
                 path="/admin/event/:eventId" 
                 element={
@@ -69,6 +78,15 @@ function App() {
                     <QRScanner />
                   </ProtectedRoute>
                 } 
+              />
+              {/* Protected Student/Admin Profile Route */}
+              <Route 
+                path="/profile" 
+                element={
+                  <ProtectedRoute>
+                    <Profile />
+                  </ProtectedRoute>
+                }
               />
             </Routes>
           </main>

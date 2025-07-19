@@ -15,22 +15,27 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Set up axios defaults
-  const token = localStorage.getItem('token');
-  if (token) {
-    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-  }
-
   useEffect(() => {
+    const token = localStorage.getItem('token');
+    const savedUser = localStorage.getItem('user');
+
+    if (token) {
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      if (savedUser) {
+        setUser(JSON.parse(savedUser));
+      }
+    }
+
     const checkAuth = async () => {
-      const token = localStorage.getItem('token');
       if (token) {
         try {
           const response = await axios.get('http://localhost:5000/api/auth/me');
           setUser(response.data.user);
+          localStorage.setItem('user', JSON.stringify(response.data.user));
         } catch (error) {
           console.error('Auth check failed:', error);
           localStorage.removeItem('token');
+          localStorage.removeItem('user');
           delete axios.defaults.headers.common['Authorization'];
         }
       }
@@ -49,14 +54,15 @@ export const AuthProvider = ({ children }) => {
 
       const { token, user } = response.data;
       localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify(user));
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       setUser(user);
 
       return { success: true };
     } catch (error) {
-      return { 
-        success: false, 
-        message: error.response?.data?.message || 'Login failed' 
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Login failed'
       };
     }
   };
@@ -67,22 +73,40 @@ export const AuthProvider = ({ children }) => {
 
       const { token, user } = response.data;
       localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify(user));
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       setUser(user);
 
       return { success: true };
     } catch (error) {
-      return { 
-        success: false, 
-        message: error.response?.data?.message || 'Registration failed' 
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Registration failed'
       };
     }
   };
 
   const logout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('user');
     delete axios.defaults.headers.common['Authorization'];
     setUser(null);
+  };
+
+  const updateProfile = async (profileData) => {
+    try {
+      const response = await axios.put('http://localhost:5000/api/auth/profile', profileData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      setUser(response.data.user);
+      localStorage.setItem('user', JSON.stringify(response.data.user));
+      return { success: true, user: response.data.user };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Profile update failed'
+      };
+    }
   };
 
   const value = {
@@ -90,6 +114,7 @@ export const AuthProvider = ({ children }) => {
     login,
     register,
     logout,
+    updateProfile,
     loading
   };
 

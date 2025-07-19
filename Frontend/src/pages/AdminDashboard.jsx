@@ -233,6 +233,12 @@ const AdminDashboard = () => {
                     >
                       Registrations
                     </Link>
+                    <Link
+                      to={`/admin/edit-event/${event._id}`}
+                      className="bg-yellow-500 text-white px-3 py-1 rounded-lg text-sm hover:bg-yellow-600 transition-colors duration-200 shadow-md hover:shadow-lg"
+                    >
+                      Edit
+                    </Link>
                     <button
                       onClick={() => handleDeleteEvent(event._id)}
                       className="bg-red-600 text-white px-3 py-1 rounded-lg text-sm hover:bg-red-700 transition-colors duration-200 shadow-md hover:shadow-lg"

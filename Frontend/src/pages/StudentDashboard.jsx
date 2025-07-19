@@ -92,7 +92,7 @@ const StudentDashboard = () => {
               <div>
                 <p className="text-sm text-gray-600 dark:text-gray-300">Upcoming</p>
                 <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {registrations.filter(reg => new Date(reg.eventId.date) > new Date()).length}
+                  {registrations.filter(reg => reg.eventId && reg.eventId.date && new Date(reg.eventId.date) > new Date()).length}
                 </p>
               </div>
             </div>
@@ -114,6 +114,7 @@ const StudentDashboard = () => {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {registrations.map((registration) => {
+                if (!registration.eventId || !registration.eventId.date) return null;
                 const eventDate = new Date(registration.eventId.date);
                 const isUpcoming = eventDate > new Date();
                 

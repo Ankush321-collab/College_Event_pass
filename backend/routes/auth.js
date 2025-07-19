@@ -2,13 +2,31 @@ import express from 'express';
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 import { authenticateToken } from '../middleware/auth.js';
+import multer from 'multer';
+import path from 'path';
+
+// Multer setup for profile picture upload
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'uploads');
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, uniqueSuffix + '-' + file.originalname);
+  }
+});
+const upload = multer({ storage });
 
 const router = express.Router();
 
 // Register
-router.post('/register', async (req, res) => {
+router.post('/register', upload.single('profilePic'), async (req, res) => {
   try {
     const { name, email, password, rollNumber, role } = req.body;
+    let profilePic = null;
+    if (req.file) {
+      profilePic = `/uploads/${req.file.filename}`;
+    }
 
     // Check if user already exists
     const existingUser = await User.findOne({ 
@@ -27,7 +45,8 @@ router.post('/register', async (req, res) => {
       email,
       password,
       rollNumber: role === 'student' ? rollNumber : undefined,
-      role: role || 'student'
+      role: role || 'student',
+      profilePic
     });
 
     await user.save();
@@ -47,7 +66,8 @@ router.post('/register', async (req, res) => {
         name: user.name,
         email: user.email,
         rollNumber: user.rollNumber,
-        role: user.role
+        role: user.role,
+        profilePic: user.profilePic
       }
     });
   } catch (error) {
@@ -88,7 +108,8 @@ router.post('/login', async (req, res) => {
         name: user.name,
         email: user.email,
         rollNumber: user.rollNumber,
-        role: user.role
+        role: user.role,
+        profilePic: user.profilePic
       }
     });
   } catch (error) {
@@ -97,17 +118,54 @@ router.post('/login', async (req, res) => {
   }
 });
 
+// Update user profile
+router.put('/profile', authenticateToken, upload.single('profilePic'), async (req, res) => {
+  try {
+    const updates = {};
+    if (req.body.name) updates.name = req.body.name;
+    if (req.body.email) updates.email = req.body.email;
+    if (req.body.rollNumber) updates.rollNumber = req.body.rollNumber;
+    if (req.file) updates.profilePic = `/uploads/${req.file.filename}`;
+
+    const user = await User.findByIdAndUpdate(req.user._id, updates, { new: true });
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    res.json({
+      message: 'Profile updated successfully',
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        rollNumber: user.rollNumber,
+        role: user.role,
+        profilePic: user.profilePic
+      }
+    });
+  } catch (error) {
+    console.error('Profile update error:', error);
+    res.status(500).json({ message: 'Server error during profile update' });
+  }
+});
+
 // Get current user
-router.get('/me', authenticateToken, (req, res) => {
-  res.json({
-    user: {
-      id: req.user._id,
-      name: req.user.name,
-      email: req.user.email,
-      rollNumber: req.user.rollNumber,
-      role: req.user.role
-    }
-  });
+router.get('/me', authenticateToken, async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    res.json({
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        rollNumber: user.rollNumber,
+        role: user.role,
+        profilePic: user.profilePic
+      }
+    });
+  } catch (err) {
+    console.error('Me route error:', err);
+    res.status(500).json({ message: 'Failed to fetch user data' });
+  }
 });
 
 export default router;

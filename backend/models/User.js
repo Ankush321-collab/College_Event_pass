@@ -32,6 +32,10 @@ const userSchema = new mongoose.Schema({
     enum: ['student', 'admin'],
     default: 'student'
   },
+  profilePic: {
+    type: String,
+    default: null
+  },
   createdAt: {
     type: Date,
     default: Date.now

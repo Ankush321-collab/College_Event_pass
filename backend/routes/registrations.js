@@ -4,6 +4,7 @@ import QRCode from 'qrcode';
 import Registration from '../models/Registration.js';
 import Event from '../models/Event.js';
 import { authenticateToken } from '../middleware/auth.js';
+import { Parser as Json2csvParser } from 'json2csv';
 
 const router = express.Router();
 
@@ -105,13 +106,44 @@ router.get('/my-registrations', authenticateToken, async (req, res) => {
 router.get('/event/:eventId', authenticateToken, async (req, res) => {
   try {
     const registrations = await Registration.find({ eventId: req.params.eventId })
-      .populate('studentId', 'name email rollNumber')
+      .populate('studentId', 'name email rollNumber profilePic')
       .sort({ createdAt: -1 });
 
     res.json(registrations);
   } catch (error) {
     console.error('Error fetching event registrations:', error);
     res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Export event registrations as CSV (Admin only)
+router.get('/export/:eventId', authenticateToken, async (req, res) => {
+  try {
+    const registrations = await Registration.find({ eventId: req.params.eventId })
+      .populate('studentId', 'name email rollNumber')
+      .sort({ createdAt: -1 });
+
+    if (!registrations.length) {
+      return res.status(404).json({ message: 'No registrations found for this event' });
+    }
+
+    const data = registrations.map(reg => ({
+      Name: reg.studentId?.name || '-',
+      Email: reg.studentId?.email || '-',
+      RollNumber: reg.studentId?.rollNumber || '-',
+      RegisteredAt: reg.createdAt,
+      Status: reg.isScanned ? 'Scanned' : 'Pending'
+    }));
+
+    const json2csv = new Json2csvParser({ fields: ['Name', 'Email', 'RollNumber', 'RegisteredAt', 'Status'] });
+    const csv = json2csv.parse(data);
+
+    res.header('Content-Type', 'text/csv');
+    res.attachment('registrations.csv');
+    return res.send(csv);
+  } catch (error) {
+    console.error('Error exporting registrations:', error);
+    res.status(500).json({ message: 'Server error during export' });
   }
 });
 
