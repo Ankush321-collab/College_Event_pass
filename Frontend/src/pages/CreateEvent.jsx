@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { Calendar, MapPin, Users, FileText, Image, Sun, Moon, Upload, Link } from 'lucide-react';
 
 const CreateEvent = () => {
+  const { eventId } = useParams();
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -13,6 +14,7 @@ const CreateEvent = () => {
     capacity: '',
     posterUrl: ''
   });
+  const [isEditMode, setIsEditMode] = useState(false);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [imagePreview, setImagePreview] = useState('');
@@ -34,6 +36,31 @@ const CreateEvent = () => {
       window.matchMedia('(prefers-color-scheme: dark)').removeEventListener('change', listener);
     };
   }, []);
+
+  // Fetch event data if editing
+  useEffect(() => {
+    if (eventId) {
+      setIsEditMode(true);
+      (async () => {
+        try {
+          const res = await axios.get(`http://localhost:5000/api/events/${eventId}`);
+          const event = res.data;
+          setFormData({
+            title: event.title || '',
+            description: event.description || '',
+            date: event.date ? new Date(event.date).toISOString().slice(0, 16) : '',
+            venue: event.venue || '',
+            capacity: event.capacity ? String(event.capacity) : '',
+            posterUrl: event.posterUrl || ''
+          });
+          setImagePreview(event.posterUrl || '');
+          setUploadedImageUrl(event.posterUrl || '');
+        } catch (err) {
+          toast.error('Failed to fetch event details');
+        }
+      })();
+    }
+  }, [eventId]);
 
   const handleChange = (e) => {
     setFormData({
@@ -90,11 +117,16 @@ const CreateEvent = () => {
         date: new Date(formData.date).toISOString()
       };
 
-      await axios.post('http://localhost:5000/api/events', eventData);
-      toast.success('Event created successfully!');
+      if (isEditMode) {
+        await axios.put(`http://localhost:5000/api/events/${eventId}`, eventData);
+        toast.success('Event updated successfully!');
+      } else {
+        await axios.post('http://localhost:5000/api/events', eventData);
+        toast.success('Event created successfully!');
+      }
       navigate('/admin');
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to create event');
+      toast.error(error.response?.data?.message || (isEditMode ? 'Failed to update event' : 'Failed to create event'));
     } finally {
       setLoading(false);
     }
@@ -124,10 +156,10 @@ const CreateEvent = () => {
                   />
                 </div>
                 <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-purple-600">
-                  Create New Event
+                  {isEditMode ? 'Edit Event' : 'Create New Event'}
                 </h1>
                 <p className={`mt-2 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                  Fill in the details to create a new event
+                  {isEditMode ? 'Update the details of your event' : 'Fill in the details to create a new event'}
                 </p>
               </div>
 
@@ -316,12 +348,12 @@ const CreateEvent = () => {
                     {loading ? (
                       <div className="flex items-center justify-center">
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        Creating Event...
+                        {isEditMode ? 'Updating Event...' : 'Creating Event...'}
                       </div>
                     ) : (
                       <span className="flex items-center">
                         <Calendar className="h-4 w-4 mr-2" />
-                        Create Event
+                        {isEditMode ? 'Update Event' : 'Create Event'}
                       </span>
                     )}
                   </button>

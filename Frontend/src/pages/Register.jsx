@@ -13,6 +13,7 @@ const Register = () => {
     rollNumber: '',
     role: 'student'
   });
+  const [profilePic, setProfilePic] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -24,6 +25,10 @@ const Register = () => {
       ...formData,
       [e.target.name]: e.target.value
     });
+  };
+
+  const handleFileChange = (e) => {
+    setProfilePic(e.target.files[0]);
   };
 
   const handleSubmit = async (e) => {
@@ -42,13 +47,16 @@ const Register = () => {
     setLoading(true);
 
     try {
-      const result = await register({
-        name: formData.name,
-        email: formData.email,
-        password: formData.password,
-        rollNumber: formData.role === 'student' ? formData.rollNumber : undefined,
-        role: formData.role
-      });
+      // Prepare form data for file upload
+      const data = new FormData();
+      data.append('name', formData.name);
+      data.append('email', formData.email);
+      data.append('password', formData.password);
+      if (formData.role === 'student') data.append('rollNumber', formData.rollNumber);
+      data.append('role', formData.role);
+      if (profilePic) data.append('profilePic', profilePic);
+
+      const result = await register(data, true); // true = multipart
       
       if (result.success) {
         toast.success('Registration successful!');
@@ -77,6 +85,19 @@ const Register = () => {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
+            <div>
+              <label htmlFor="profilePic" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Profile Picture
+              </label>
+              <input
+                type="file"
+                id="profilePic"
+                name="profilePic"
+                accept="image/*"
+                onChange={handleFileChange}
+                className="mt-1 block w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white transition-all duration-200 hover:border-blue-400 dark:hover:border-blue-400"
+              />
+            </div>
             <div>
               <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Full Name

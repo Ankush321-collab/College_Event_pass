@@ -56,7 +56,7 @@ const Home = () => {
   };
 
   const isRegistered = (eventId) => {
-    return registrations.some(reg => reg.eventId._id === eventId);
+    return registrations.some(reg => reg.eventId && reg.eventId._id === eventId);
   };
 
   if (loading) {

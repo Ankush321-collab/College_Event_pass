@@ -7,6 +7,11 @@ import eventRoutes from './routes/events.js';
 import registrationRoutes from './routes/registrations.js';
 import scanRoutes from './routes/scan.js';
 import path from 'path';
+import cron from 'node-cron';
+import Event from './models/Event.js';
+import Registration from './models/Registration.js';
+import User from './models/User.js';
+import nodemailer from 'nodemailer';
 
 dotenv.config();
 
@@ -25,6 +30,55 @@ app.use('/api/auth', authRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/registrations', registrationRoutes);
 app.use('/api/scan', scanRoutes);
+
+// Utility function to send email (copied from registrations.js)
+async function sendEmail({ to, subject, text, html }) {
+  const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
+    },
+  });
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
+    to,
+    subject,
+    text,
+    html,
+  };
+  return transporter.sendMail(mailOptions);
+}
+
+// Cron job: runs every hour
+cron.schedule('0 * * * *', async () => {
+  try {
+    const now = new Date();
+    const in24h = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+    // Find events happening in ~24 hours
+    const events = await Event.find({
+      date: { $gte: new Date(in24h.getTime() - 30 * 60 * 1000), $lte: new Date(in24h.getTime() + 30 * 60 * 1000) }
+    });
+    for (const event of events) {
+      // Find all registrations for this event
+      const registrations = await Registration.find({ eventId: event._id }).populate('studentId');
+      for (const reg of registrations) {
+        if (reg.studentId && reg.studentId.email) {
+          await sendEmail({
+            to: reg.studentId.email,
+            subject: `Reminder: Upcoming Event - ${event.title}`,
+            text: `Dear ${reg.studentId.name},\n\nThis is a reminder for the event: ${event.title} on ${event.date}.\nVenue: ${event.venue}\n\nSee you there!`,
+          });
+        }
+      }
+    }
+    if (events.length > 0) {
+      console.log(`Reminders sent for events: ${events.map(e => e.title).join(', ')}`);
+    }
+  } catch (err) {
+    console.error('Error in reminder cron job:', err);
+  }
+});
 
 // MongoDB Connection
 mongoose.connect(process.env.MONGO_URL)

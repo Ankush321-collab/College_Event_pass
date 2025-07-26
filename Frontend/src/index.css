@@ -2,6 +2,24 @@
 @tailwind components;
 @tailwind utilities;
 
+body {
+  font-family: 'Inter', sans-serif;
+  @apply bg-white text-gray-900 transition-colors duration-300;
+}
+
+.dark body {
+  @apply bg-[#111111] text-gray-100 transition-colors duration-300;
+}
+
+/* Card/section backgrounds */
+.bg-card {
+  @apply bg-white dark:bg-[#23272f];
+}
+
+.bg-section {
+  @apply bg-[#f8f9fa] dark:bg-[#18181b];
+}
+
 /* Unique vibrant dark mode styles */
 html.dark body {
   @apply bg-gradient-to-br from-[#0f2027] via-[#2c5364] to-[#232526] text-cyan-100 transition-colors duration-300;

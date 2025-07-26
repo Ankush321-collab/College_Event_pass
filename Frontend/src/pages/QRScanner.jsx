@@ -16,6 +16,15 @@ const QRScanner = () => {
   const [testStream, setTestStream] = useState(null);
   const testVideoRef = useRef(null);
   const qrRegionId = "qr-reader";
+  const [showUserModal, setShowUserModal] = useState(false);
+  const [modalUser, setModalUser] = useState(null);
+  const getProfilePicUrl = (profilePic) => {
+    if (!profilePic) return '/default-avatar.png';
+    if (profilePic.startsWith('/uploads/')) {
+      return `http://localhost:5000${profilePic}`;
+    }
+    return profilePic;
+  };
 
   useEffect(() => {
     async function fetchCameras() {
@@ -85,6 +94,13 @@ const QRScanner = () => {
       setScanResult({ success: true, data: response.data });
       toast.success('Entry verified!');
       stopScanning();
+      // Show user modal for 2 seconds
+      const user = response.data.registration?.studentId;
+      if (user) {
+        setModalUser(user);
+        setShowUserModal(true);
+        setTimeout(() => setShowUserModal(false), 5000);
+      }
     } catch (error) {
       const errorMessage = error.response?.data?.message || 'QR verification failed';
       setScanResult({ success: false, message: errorMessage, data: error.response?.data });
@@ -258,6 +274,26 @@ const QRScanner = () => {
                 <RotateCw className="w-4 h-4" />
                 Scan Another
               </button>
+            </div>
+          </div>
+        )}
+
+        {/* User Detail Modal after scan */}
+        {showUserModal && modalUser && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+            <div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl p-8 w-full max-w-md relative flex flex-col items-center">
+              <button onClick={() => setShowUserModal(false)} className="absolute top-2 right-2 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 text-2xl">✕</button>
+              <img
+                src={getProfilePicUrl(modalUser.profilePic)}
+                alt="Profile"
+                className="h-32 w-32 rounded-full object-cover border-4 border-blue-600 dark:border-blue-400 mb-4 shadow-lg"
+                onError={e => { e.target.onerror = null; e.target.src = '/default-avatar.png'; }}
+              />
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-1">{modalUser.name}</h3>
+              <p className="text-gray-500 dark:text-gray-300">{modalUser.email}</p>
+              {modalUser.rollNumber && (
+                <p className="text-gray-500 dark:text-gray-300">Roll No: {modalUser.rollNumber}</p>
+              )}
             </div>
           </div>
         )}
