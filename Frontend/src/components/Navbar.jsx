@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Menu, X, Calendar, QrCode, User, LogOut, Settings, Sun, Moon, ChevronDown } from 'lucide-react';
+import { Menu, X, Calendar, QrCode, User, LogOut, Settings, Sun, Moon, ChevronDown, Bell } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const Navbar = () => {
@@ -19,6 +19,10 @@ const Navbar = () => {
   const [profilePicPreview, setProfilePicPreview] = useState(user?.profilePic || null);
   const [profilePicFile, setProfilePicFile] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [loadingNotifications, setLoadingNotifications] = useState(false);
+  const [eventStatus, setEventStatus] = useState({});
 
   const navigate = useNavigate();
 
@@ -91,6 +95,61 @@ const Navbar = () => {
     } else {
       toast.error(result.message || 'Failed to update profile');
     }
+  };
+
+  // Fetch notifications for the logged-in user
+  useEffect(() => {
+    if (user) {
+      setLoadingNotifications(true);
+      fetch('http://localhost:5000/api/registrations/notifications', {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+      })
+        .then(res => res.json())
+        .then(data => {
+          setNotifications(data.notifications || []);
+          setLoadingNotifications(false);
+        })
+        .catch(() => setLoadingNotifications(false));
+    }
+  }, [user]);
+
+  // Fetch event status for notifications with eventId
+  useEffect(() => {
+    const fetchEventStatus = async () => {
+      const status = {};
+      for (const n of notifications) {
+        if (n.eventId) {
+          try {
+            const res = await fetch(`http://localhost:5000/api/events/${n.eventId}`);
+            if (res.ok) {
+              const event = await res.json();
+              status[n.eventId] = new Date(event.date) < new Date() ? 'finished' : 'active';
+            } else {
+              status[n.eventId] = 'deleted';
+            }
+          } catch {
+            status[n.eventId] = 'deleted';
+          }
+        }
+      }
+      setEventStatus(status);
+    };
+    if (notifications.length > 0) fetchEventStatus();
+  }, [notifications]);
+
+  const handleMarkAsRead = async (id) => {
+    await fetch(`http://localhost:5000/api/registrations/notifications/${id}/read`, {
+      method: 'PATCH',
+      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+    });
+    setNotifications(notifications.map(n => n._id === id ? { ...n, read: true } : n));
+  };
+
+  const handleNotificationClick = (notification) => {
+    if (notification.eventId) {
+      navigate(`/events/${notification.eventId}`);
+    }
+    handleMarkAsRead(notification._id);
   };
 
   console.log('Navbar user:', user);
@@ -171,6 +230,48 @@ const Navbar = () => {
                   </Link>
                 )}
                 
+                {/* Notification Bell */}
+                {user && (
+                  <div className="relative">
+                    <button
+                      className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-300 relative"
+                      aria-label="Show notifications"
+                      onClick={() => setShowNotifications(!showNotifications)}
+                    >
+                      <Bell className="h-5 w-5 text-gray-600 dark:text-gray-300" />
+                      {notifications.some(n => !n.read) && (
+                        <span className="absolute top-1 right-1 block h-2 w-2 rounded-full bg-red-500"></span>
+                      )}
+                    </button>
+                    {showNotifications && (
+                      <div className="absolute right-0 mt-2 w-80 max-h-96 overflow-y-auto bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-50 animate-scaleIn">
+                        <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-700 font-semibold text-gray-700 dark:text-gray-200">
+                          Notifications
+                        </div>
+                        {loadingNotifications ? (
+                          <div className="p-4 text-center text-gray-500 dark:text-gray-400">Loading...</div>
+                        ) : notifications.length === 0 ? (
+                          <div className="p-4 text-center text-gray-500 dark:text-gray-400">No notifications</div>
+                        ) : (
+                          notifications.map(n => (
+                            <div
+                              key={n._id}
+                              className={`px-4 py-3 border-b border-gray-100 dark:border-gray-700 cursor-pointer transition-colors duration-200
+                                ${n.read ? 'bg-white dark:bg-gray-800' : 'bg-blue-50 dark:bg-blue-900/30'}
+                                ${(n.deleted || eventStatus[n.eventId] === 'deleted' || eventStatus[n.eventId] === 'finished') ? 'opacity-50 grayscale pointer-events-none' : ''}`}
+                              onClick={() => handleNotificationClick(n)}
+                            >
+                              <div className="text-sm text-gray-800 dark:text-gray-100">{n.message}</div>
+                              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">{new Date(n.createdAt).toLocaleString()}</div>
+                              {(n.deleted || eventStatus[n.eventId] === 'deleted') && <div className="text-xs text-red-400 mt-1">Event deleted</div>}
+                              {eventStatus[n.eventId] === 'finished' && <div className="text-xs text-gray-400 mt-1">Event finished</div>}
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
                 {/* User Dropdown */}
                 <div className="relative">
                   <button 
