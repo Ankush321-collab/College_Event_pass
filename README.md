@@ -1,6 +1,7 @@
 # 🚀 EventPass – College Event Manager
 
-![Dashboard Screenshot](Frontend/public/dashboard-screenshot.png)
+
+![alt text](image.png)
 
 ---
 
