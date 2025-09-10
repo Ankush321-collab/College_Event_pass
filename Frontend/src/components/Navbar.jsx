@@ -101,7 +101,7 @@ const Navbar = () => {
   useEffect(() => {
     if (user) {
       setLoadingNotifications(true);
-      fetch('http://localhost:5000/api/registrations/notifications', {
+      fetch('https://college-event-pass-1.onrender.com/api/registrations/notifications', {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
       })
         .then(res => res.json())
@@ -120,7 +120,7 @@ const Navbar = () => {
       for (const n of notifications) {
         if (n.eventId) {
           try {
-            const res = await fetch(`http://localhost:5000/api/events/${n.eventId}`);
+            const res = await fetch(`https://college-event-pass-1.onrender.com/api/events/${n.eventId}`);
             if (res.ok) {
               const event = await res.json();
               status[n.eventId] = new Date(event.date) < new Date() ? 'finished' : 'active';
@@ -138,7 +138,7 @@ const Navbar = () => {
   }, [notifications]);
 
   const handleMarkAsRead = async (id) => {
-    await fetch(`http://localhost:5000/api/registrations/notifications/${id}/read`, {
+    await fetch(`https://college-event-pass-1.onrender.com/api/registrations/notifications/${id}/read`, {
       method: 'PATCH',
       headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
     });

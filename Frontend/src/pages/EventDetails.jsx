@@ -34,7 +34,7 @@ const EventDetails = () => {
 
   const fetchEvent = async () => {
     try {
-      const response = await axios.get(`http://localhost:5000/api/events/${id}`);
+      const response = await axios.get(`https://college-event-pass-1.onrender.com/api/events/${id}`);
       setEvent(response.data);
     } catch (error) {
       console.error('Error fetching event:', error);
@@ -47,7 +47,7 @@ const EventDetails = () => {
 
   const checkRegistration = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/registrations/my-registrations');
+      const response = await axios.get('https://college-event-pass-1.onrender.com/api/registrations/my-registrations');
       const registration = response.data.find(reg => reg.eventId._id === id);
       setIsRegistered(!!registration);
     } catch (error) {
@@ -64,7 +64,7 @@ const EventDetails = () => {
 
     setRegistering(true);
     try {
-      await axios.post(`http://localhost:5000/api/registrations/${id}`);
+      await axios.post(`https://college-event-pass-1.onrender.com/api/registrations/${id}`);
       toast.success('Registration successful! Check your dashboard for the QR pass.');
       setIsRegistered(true);
       fetchEvent(); // Refresh event data to update capacity

@@ -23,7 +23,7 @@ const AdminDashboard = () => {
 
   const fetchEvents = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/events');
+      const response = await axios.get('https://college-event-pass-1.onrender.com/api/events');
       setEvents(response.data);
     } catch (error) {
       console.error('Error fetching events:', error);
@@ -35,14 +35,14 @@ const AdminDashboard = () => {
 
   const fetchStats = async () => {
     try {
-      const eventsResponse = await axios.get('http://localhost:5000/api/events');
+      const eventsResponse = await axios.get('https://college-event-pass-1.onrender.com/api/events');
       const events = eventsResponse.data;
       
       let totalRegistrations = 0;
       let totalAttended = 0;
 
       for (const event of events) {
-        const registrationsResponse = await axios.get(`http://localhost:5000/api/registrations/event/${event._id}`);
+        const registrationsResponse = await axios.get(`https://college-event-pass-1.onrender.com/api/registrations/event/${event._id}`);
         const registrations = registrationsResponse.data;
         
         totalRegistrations += registrations.length;
@@ -62,7 +62,7 @@ const AdminDashboard = () => {
   const handleDeleteEvent = async (eventId) => {
     if (window.confirm('Are you sure you want to delete this event?')) {
       try {
-        await axios.delete(`http://localhost:5000/api/events/${eventId}`);
+        await axios.delete(`https://college-event-pass-1.onrender.com/api/events/${eventId}`);
         toast.success('Event deleted successfully');
         fetchEvents();
         fetchStats();

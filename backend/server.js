@@ -85,6 +85,9 @@ mongoose.connect(process.env.MONGO_URL)
   .then(() => console.log('🚀 Connected to MongoDB'))
   .catch((err) => console.error('❌ MongoDB connection error:', err));
 
+  app.use('/',(req,res)=>{
+    res.send("backend running by ankush")
+  })
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);

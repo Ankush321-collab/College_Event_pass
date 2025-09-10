@@ -43,7 +43,7 @@ const CreateEvent = () => {
       setIsEditMode(true);
       (async () => {
         try {
-          const res = await axios.get(`http://localhost:5000/api/events/${eventId}`);
+          const res = await axios.get(`https://college-event-pass-1.onrender.com/api/events/${eventId}`);
           const event = res.data;
           setFormData({
             title: event.title || '',
@@ -84,7 +84,7 @@ const CreateEvent = () => {
     formData.append('image', file);
     
     try {
-      const res = await axios.post('http://localhost:5000/api/events/upload', formData, {
+      const res = await axios.post('https://college-event-pass-1.onrender.com/api/events/upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
         withCredentials: false
       });
@@ -118,10 +118,10 @@ const CreateEvent = () => {
       };
 
       if (isEditMode) {
-        await axios.put(`http://localhost:5000/api/events/${eventId}`, eventData);
+        await axios.put(`https://college-event-pass-1.onrender.com/api/events/${eventId}`, eventData);
         toast.success('Event updated successfully!');
       } else {
-        await axios.post('http://localhost:5000/api/events', eventData);
+        await axios.post('https://college-event-pass-1.onrender.com/api/events', eventData);
         toast.success('Event created successfully!');
       }
       navigate('/admin');

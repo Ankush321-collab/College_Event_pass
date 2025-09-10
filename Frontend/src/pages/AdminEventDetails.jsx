@@ -19,7 +19,7 @@ const AdminEventDetails = () => {
 
   const fetchEvent = async () => {
     try {
-      const response = await axios.get(`http://localhost:5000/api/events/${eventId}`);
+      const response = await axios.get(`https://college-event-pass-1.onrender.com/api/events/${eventId}`);
       setEvent(response.data);
     } catch (error) {
       navigate('/admin');
@@ -28,7 +28,7 @@ const AdminEventDetails = () => {
 
   const fetchRegistrations = async () => {
     try {
-      const response = await axios.get(`http://localhost:5000/api/registrations/event/${eventId}`);
+      const response = await axios.get(`https://college-event-pass-1.onrender.com/api/registrations/event/${eventId}`);
       setRegistrations(response.data);
     } catch (error) {
       setRegistrations([]);
@@ -41,7 +41,7 @@ const AdminEventDetails = () => {
     setExporting(true);
     try {
       const response = await axios.get(
-        `http://localhost:5000/api/registrations/export/${eventId}`,
+        `https://college-event-pass-1.onrender.com/api/registrations/export/${eventId}`,
         { responseType: 'blob' }
       );
       const url = window.URL.createObjectURL(new Blob([response.data]));

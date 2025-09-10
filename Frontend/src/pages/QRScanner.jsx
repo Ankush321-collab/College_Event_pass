@@ -88,7 +88,7 @@ const QRScanner = () => {
   const onScanSuccess = async (decodedText, decodedResult) => {
     setLoading(true);
     try {
-      const response = await axios.post('http://localhost:5000/api/scan', {
+      const response = await axios.post('https://college-event-pass-1.onrender.com/api/scan', {
         qrCodeData: decodedText,
       });
       setScanResult({ success: true, data: response.data });

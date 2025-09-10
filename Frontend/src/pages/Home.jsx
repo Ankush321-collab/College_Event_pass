@@ -20,7 +20,7 @@ const Home = () => {
 
   const fetchEvents = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/events');
+      const response = await axios.get('https://college-event-pass-1.onrender.com/api/events');
       setEvents(response.data);
     } catch (error) {
       console.error('Error fetching events:', error);
@@ -32,7 +32,7 @@ const Home = () => {
 
   const fetchRegistrations = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/registrations/my-registrations');
+      const response = await axios.get('https://college-event-pass-1.onrender.com/api/registrations/my-registrations');
       setRegistrations(response.data);
     } catch (error) {
       console.error('Error fetching registrations:', error);
@@ -46,7 +46,7 @@ const Home = () => {
     }
 
     try {
-      await axios.post(`http://localhost:5000/api/registrations/${eventId}`);
+      await axios.post(`https://college-event-pass-1.onrender.com/api/registrations/${eventId}`);
       toast.success('Registration successful!');
       fetchEvents();
       fetchRegistrations();
