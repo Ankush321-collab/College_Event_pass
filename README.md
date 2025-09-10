@@ -1,4 +1,4 @@
-# 🚀 EventPass – College Event Manager
+# 🚀 EventPass – College Event Manager!!
 
 
 ![alt text](image.png)
