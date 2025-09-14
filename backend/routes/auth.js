@@ -29,9 +29,12 @@ router.post('/register', upload.single('profilePic'), async (req, res) => {
     }
 
     // Check if user already exists
-    const existingUser = await User.findOne({ 
-      $or: [{ email }, { rollNumber: rollNumber || null }] 
-    });
+    const sanitizedRoll = typeof rollNumber === 'string' ? rollNumber.trim() : undefined;
+    const orConditions = [{ email }];
+    if ((role === 'student') && sanitizedRoll) {
+      orConditions.push({ rollNumber: sanitizedRoll });
+    }
+    const existingUser = await User.findOne({ $or: orConditions });
 
     if (existingUser) {
       return res.status(400).json({ 
@@ -44,7 +47,7 @@ router.post('/register', upload.single('profilePic'), async (req, res) => {
       name,
       email,
       password,
-      rollNumber: role === 'student' ? rollNumber : undefined,
+      rollNumber: (role === 'student' && sanitizedRoll) ? sanitizedRoll : undefined,
       role: role || 'student',
       profilePic
     });
