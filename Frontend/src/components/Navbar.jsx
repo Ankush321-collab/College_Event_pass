@@ -29,7 +29,7 @@ const Navbar = () => {
   const getProfilePicUrl = (profilePic) => {
     if (!profilePic) return '/default-avatar.png';
     if (profilePic.startsWith('/uploads/')) {
-      return `http://localhost:5000${profilePic}`;
+      return `https://college-event-pass-1.onrender.com${profilePic}`;
     }
     return profilePic;
   };
