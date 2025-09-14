@@ -53,10 +53,13 @@ const Profile = () => {
     }
   };
 
+  const API_BASE = import.meta.env.VITE_API_URL || 'https://college-event-pass-1.onrender.com';
+  const defaultAvatar = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="%23a1c4fd"/><stop offset="1" stop-color="%23c2e9fb"/></linearGradient></defs><rect width="128" height="128" fill="url(%23g)"/><circle cx="64" cy="46" r="22" fill="%23ffffff"/><path d="M20 112c8-24 32-28 44-28s36 4 44 28" fill="%23ffffff"/></svg>';
+
   const getProfilePicUrl = (profilePic) => {
-    if (!profilePic) return '/default-avatar.png';
-    if (profilePic.startsWith('/uploads/')) {
-      return `http://localhost:5000${profilePic}`;
+    if (!profilePic) return defaultAvatar;
+    if (typeof profilePic === 'string' && profilePic.startsWith('/uploads/')) {
+      return `${API_BASE}${profilePic}`;
     }
     return profilePic;
   };
@@ -73,7 +76,7 @@ const Profile = () => {
                 src={getProfilePicUrl(profilePicPreview)}
                 alt="Profile"
                 className="w-24 h-24 rounded-full object-cover border-2 border-blue-500 dark:border-blue-400"
-                onError={e => { e.target.onerror = null; e.target.src = '/default-avatar.png'; }}
+                onError={e => { e.target.onerror = null; e.target.src = defaultAvatar; }}
               />
               <label htmlFor="profilePicUpload" className="absolute bottom-0 right-0 bg-blue-600 dark:bg-blue-400 text-white rounded-full p-1 cursor-pointer hover:bg-blue-700 dark:hover:bg-blue-500 transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536M9 13h6m2 2a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2h10z" /></svg>

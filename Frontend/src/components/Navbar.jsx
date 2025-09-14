@@ -26,10 +26,13 @@ const Navbar = () => {
 
   const navigate = useNavigate();
 
+  const API_BASE = import.meta.env.VITE_API_URL || 'https://college-event-pass-1.onrender.com';
+  const defaultAvatar = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="%23a1c4fd"/><stop offset="1" stop-color="%23c2e9fb"/></linearGradient></defs><rect width="128" height="128" fill="url(%23g)"/><circle cx="64" cy="46" r="22" fill="%23ffffff"/><path d="M20 112c8-24 32-28 44-28s36 4 44 28" fill="%23ffffff"/></svg>';
+
   const getProfilePicUrl = (profilePic) => {
-    if (!profilePic) return '/default-avatar.png';
-    if (profilePic.startsWith('/uploads/')) {
-      return `http://localhost:5000${profilePic}`;
+    if (!profilePic) return defaultAvatar;
+    if (typeof profilePic === 'string' && profilePic.startsWith('/uploads/')) {
+      return `${API_BASE}${profilePic}`;
     }
     return profilePic;
   };
@@ -280,7 +283,7 @@ const Navbar = () => {
                   >
                     <div className="h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center text-blue-600 dark:text-blue-400 overflow-hidden">
                       {user.profilePic ? (
-                        <img src={profilePicUrl + '?' + Date.now()} alt="Profile" className="h-8 w-8 rounded-full object-cover" onError={e => { e.target.onerror = null; e.target.src = '/default-avatar.png'; }} />
+                        <img src={profilePicUrl + '?' + Date.now()} alt="Profile" className="h-8 w-8 rounded-full object-cover" onError={e => { e.target.onerror = null; e.target.src = defaultAvatar; }} />
                       ) : (
                         <User className="h-5 w-5" />
                       )}
