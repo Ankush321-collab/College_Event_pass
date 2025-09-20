@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { ArrowLeft, Check, X, Loader2, Download, Calendar, MapPin, Users } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { getProfilePicUrl, handleAvatarError } from '../utils/avatar';
 
 const AdminEventDetails = () => {
   const { eventId } = useParams();
@@ -58,7 +59,7 @@ const AdminEventDetails = () => {
     }
   };
 
-import { getProfilePicUrl, handleAvatarError } from '../utils/avatar';
+
   const [selectedUser, setSelectedUser] = useState(null);
 
   return (
