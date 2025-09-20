@@ -270,7 +270,7 @@ const AdminEventDetails = () => {
                 src={getProfilePicUrl(selectedUser.profilePic)}
                 alt="Profile"
                 className="h-24 w-24 rounded-full object-cover border-2 border-blue-500 dark:border-blue-400 mb-2"
-                onError={e => { e.target.onerror = null; e.target.src = '/default-avatar.png'; }}
+                onError={handleAvatarError}
               />
               <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-1">{selectedUser.name}</h3>
               <p className="text-gray-500 dark:text-gray-300">{selectedUser.email}</p>

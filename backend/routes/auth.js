@@ -129,7 +129,28 @@ router.put('/profile', authenticateToken, upload.single('profilePic'), async (re
     if (req.body.name) updates.name = req.body.name;
     if (req.body.email) updates.email = req.body.email;
     if (req.body.rollNumber) updates.rollNumber = req.body.rollNumber;
-    if (req.file) updates.profilePic = `/uploads/${req.file.filename}`;
+    
+    if (req.file) {
+      // Delete old profile picture from Cloudinary if exists
+      if (req.user.profilePic && req.user.profilePic.includes('cloudinary')) {
+        try {
+          const publicId = req.user.profilePic.split('/').slice(-2).join('/').split('.')[0];
+          await cloudinary.uploader.destroy(publicId);
+        } catch (error) {
+          console.error('Error deleting old profile picture:', error);
+        }
+      }
+
+      // Upload new profile picture to Cloudinary
+      const b64 = Buffer.from(req.file.buffer).toString('base64');
+      const dataURI = `data:${req.file.mimetype};base64,${b64}`;
+      
+      const result = await cloudinary.uploader.upload(dataURI, {
+        folder: 'college_event_pass/profiles',
+        resource_type: 'auto'
+      });
+      updates.profilePic = result.secure_url;
+    }
 
     const user = await User.findByIdAndUpdate(req.user._id, updates, { new: true });
     if (!user) return res.status(404).json({ message: 'User not found' });
