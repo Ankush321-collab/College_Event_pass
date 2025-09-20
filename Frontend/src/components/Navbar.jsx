@@ -29,8 +29,17 @@ const Navbar = () => {
 
 
 
-  const profilePicUrl = getProfilePicUrl(user?.profilePic);
-  console.log('Navbar profilePicUrl:', profilePicUrl);
+  // Get profile picture URL with cache-busting
+  const profilePicUrl = user?.profilePic ? getProfilePicUrl(user.profilePic) + `?t=${Date.now()}` : getProfilePicUrl(null);
+  
+  // Refetch user data when profile is updated
+  useEffect(() => {
+    if (user?.profilePic) {
+      // Force browser to reload the image
+      const img = new Image();
+      img.src = profilePicUrl;
+    }
+  }, [user?.profilePic]);
 
   // Handle scroll effect
   useEffect(() => {

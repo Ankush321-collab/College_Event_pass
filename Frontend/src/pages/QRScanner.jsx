@@ -67,32 +67,8 @@ const QRScanner = () => {
     setScanResult(null);
     setIsScanning(true);
     try {
-      // First try with ideal constraints
-      const constraints = {
-        video: {
-          facingMode: "environment", // Prefer back camera
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
-        }
-      };
-
-      // If a specific camera is selected, add it to constraints
-      if (selectedCameraId) {
-        constraints.video.deviceId = { ideal: selectedCameraId };
-      }
-
-      try {
-        await navigator.mediaDevices.getUserMedia(constraints);
-      } catch (err) {
-        if (err.name === 'OverconstrainedError') {
-          // If ideal constraints fail, try with minimal constraints
-          await navigator.mediaDevices.getUserMedia({ 
-            video: selectedCameraId ? { deviceId: { exact: selectedCameraId } } : true 
-          });
-        } else {
-          throw err;
-        }
-      }
+      // Use minimal constraints
+      const constraints = { video: true };
       
       const html5QrConfig = {
         fps: 10,

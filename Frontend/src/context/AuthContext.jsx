@@ -95,9 +95,24 @@ export const AuthProvider = ({ children }) => {
 
   const updateProfile = async (profileData) => {
     try {
-      const response = await axios.put('https://college-event-pass-1.onrender.com/api/auth/profile', profileData, {
+      const formData = new FormData();
+      Object.keys(profileData).forEach(key => {
+        formData.append(key, profileData[key]);
+      });
+
+      const response = await axios.put('https://college-event-pass-1.onrender.com/api/auth/profile', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
+      
+      // Update local storage and state with new user data
+      const updatedUser = response.data.user;
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      setUser(updatedUser);
+
+      // Force reload profile picture by adding timestamp
+      if (updatedUser.profilePic) {
+        updatedUser.profilePic = `${updatedUser.profilePic}?t=${Date.now()}`;
+      }
       setUser(response.data.user);
       localStorage.setItem('user', JSON.stringify(response.data.user));
       return { success: true, user: response.data.user };
