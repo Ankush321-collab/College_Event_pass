@@ -58,13 +58,7 @@ const AdminEventDetails = () => {
     }
   };
 
-  const getProfilePicUrl = (profilePic) => {
-    if (!profilePic) return '/default-avatar.png';
-    if (profilePic.startsWith('/uploads/')) {
-      return `https://college-event-pass-1.onrender.com${profilePic}`;
-    }
-    return profilePic;
-  };
+import { getProfilePicUrl, handleAvatarError } from '../utils/avatar';
   const [selectedUser, setSelectedUser] = useState(null);
 
   return (
@@ -220,7 +214,7 @@ const AdminEventDetails = () => {
                         src={getProfilePicUrl(reg.studentId?.profilePic)}
                         alt="Profile"
                         className="h-8 w-8 rounded-full object-cover border border-gray-300 dark:border-gray-700"
-                        onError={e => { e.target.onerror = null; e.target.src = '/default-avatar.png'; }}
+                        onError={handleAvatarError}
                       />
                       {reg.studentId?.name || '-'}
                     </td>

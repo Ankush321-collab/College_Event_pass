@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Menu, X, Calendar, QrCode, User, LogOut, Settings, Sun, Moon, ChevronDown, Bell } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { getProfilePicUrl, handleAvatarError } from '../utils/avatar';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -26,13 +27,7 @@ const Navbar = () => {
 
   const navigate = useNavigate();
 
-  const getProfilePicUrl = (profilePic) => {
-    if (!profilePic) return '/default-avatar.png';
-    if (profilePic.startsWith('/uploads/')) {
-      return `https://college-event-pass-1.onrender.com${profilePic}`;
-    }
-    return profilePic;
-  };
+
 
   const profilePicUrl = getProfilePicUrl(user?.profilePic);
   console.log('Navbar profilePicUrl:', profilePicUrl);
@@ -280,7 +275,7 @@ const Navbar = () => {
                   >
                     <div className="h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center text-blue-600 dark:text-blue-400 overflow-hidden">
                       {user.profilePic ? (
-                        <img src={profilePicUrl + '?' + Date.now()} alt="Profile" className="h-8 w-8 rounded-full object-cover" onError={e => { e.target.onerror = null; e.target.src = defaultAvatar; }} />
+                        <img src={profilePicUrl + '?' + Date.now()} alt="Profile" className="h-8 w-8 rounded-full object-cover" onError={handleAvatarError} />
                       ) : (
                         <User className="h-5 w-5" />
                       )}

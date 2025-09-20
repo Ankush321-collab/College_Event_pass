@@ -3,6 +3,7 @@ import { Html5Qrcode } from 'html5-qrcode';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { QrCode, CheckCircle, AlertCircle, Camera, Scan, RotateCw, Image, X } from 'lucide-react';
+import { getProfilePicUrl, handleAvatarError } from '../utils/avatar';
 
 const QRScanner = () => {
   const [scanner, setScanner] = useState(null);
@@ -18,27 +19,35 @@ const QRScanner = () => {
   const qrRegionId = "qr-reader";
   const [showUserModal, setShowUserModal] = useState(false);
   const [modalUser, setModalUser] = useState(null);
-  const getProfilePicUrl = (profilePic) => {
-    if (!profilePic) return '/default-avatar.png';
-    if (profilePic.startsWith('/uploads/')) {
-      return `https://college-event-pass-1.onrender.com${profilePic}`;
-    }
-    return profilePic;
-  };
 
   useEffect(() => {
     async function fetchCameras() {
       try {
+        // First request camera permission explicitly
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        stream.getTracks().forEach(track => track.stop()); // Stop the test stream
+        
         const devices = await navigator.mediaDevices.enumerateDevices();
         const videoDevices = devices.filter(device => device.kind === 'videoinput');
         setCameraDevices(videoDevices);
         if (videoDevices.length > 0) {
           setSelectedCameraId(videoDevices[0].deviceId);
         } else {
-          setCameraError('No camera devices found.');
+          setCameraError('No camera devices found. Please ensure your device has a camera.');
         }
       } catch (err) {
-        setCameraError('Unable to access camera devices.');
+        console.error('Camera access error:', err);
+        if (err.name === 'NotAllowedError') {
+          setCameraError('Camera access denied. Please grant camera permission in your browser settings.');
+        } else if (err.name === 'NotFoundError') {
+          setCameraError('No camera found. Please ensure your device has a working camera.');
+        } else if (err.name === 'NotReadableError') {
+          setCameraError('Camera may be in use by another application. Please close other apps using the camera.');
+        } else if (err.name === 'SecurityError') {
+          setCameraError('Camera access blocked. Please use HTTPS or localhost for camera access.');
+        } else {
+          setCameraError(`Unable to access camera: ${err.message}`);
+        }
       }
     }
     fetchCameras();
@@ -53,26 +62,81 @@ const QRScanner = () => {
     };
   }, []);
 
-  const startScanning = async () => {
+    const startScanning = async () => {
     setCameraError('');
     setScanResult(null);
     setIsScanning(true);
     try {
+      // First try with ideal constraints
+      const constraints = {
+        video: {
+          facingMode: "environment", // Prefer back camera
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        }
+      };
+
+      // If a specific camera is selected, add it to constraints
+      if (selectedCameraId) {
+        constraints.video.deviceId = { ideal: selectedCameraId };
+      }
+
+      try {
+        await navigator.mediaDevices.getUserMedia(constraints);
+      } catch (err) {
+        if (err.name === 'OverconstrainedError') {
+          // If ideal constraints fail, try with minimal constraints
+          await navigator.mediaDevices.getUserMedia({ 
+            video: selectedCameraId ? { deviceId: { exact: selectedCameraId } } : true 
+          });
+        } else {
+          throw err;
+        }
+      }
+      
+      const html5QrConfig = {
+        fps: 10,
+        qrbox: (viewfinderWidth, viewfinderHeight) => {
+          const minSize = Math.min(viewfinderWidth, viewfinderHeight);
+          const boxSize = Math.floor(minSize * 0.5);
+          return {
+            width: boxSize,
+            height: boxSize
+          };
+        },
+        aspectRatio: window.innerWidth / window.innerHeight
+      };
+      
       const html5Qr = new Html5Qrcode(qrRegionId);
       await html5Qr.start(
-        { deviceId: { exact: selectedCameraId } },
-        { fps: 10, qrbox: { width: 250, height: 250 } },
+        { facingMode: "environment" },
+        html5QrConfig,
         onScanSuccess,
         onScanFailure
       );
       setScanner(html5Qr);
+      toast.success('Camera started successfully');
     } catch (err) {
-      setCameraError('Camera start failed. ' + (err.message || err));
-      toast.error('Camera start failed.');
+      console.error('Scanner error:', err);
+      let errorMessage = 'Failed to start camera. ';
+      if (err.name === 'NotAllowedError') {
+        errorMessage += 'Please grant camera permission.';
+      } else if (err.name === 'NotFoundError') {
+        errorMessage += 'Camera not found.';
+      } else if (err.name === 'NotReadableError') {
+        errorMessage += 'Camera may be in use by another application.';
+      } else if (err.name === 'SecurityError') {
+        errorMessage += 'Please use HTTPS for camera access.';
+      } else if (err.name === 'OverconstrainedError') {
+        errorMessage += 'Your device does not support the required camera settings. Try using a different camera.';
+      } else {
+        errorMessage += err.message || 'Unknown error occurred.';
+      }
+      setCameraError(errorMessage);
+      toast.error(errorMessage);
+      setIsScanning(false);
     }
-  };
-
-  const stopScanning = async () => {
+  };  const stopScanning = async () => {
     if (scanner) {
       try {
         await scanner.stop();
@@ -287,7 +351,7 @@ const QRScanner = () => {
                 src={getProfilePicUrl(modalUser.profilePic)}
                 alt="Profile"
                 className="h-32 w-32 rounded-full object-cover border-4 border-blue-600 dark:border-blue-400 mb-4 shadow-lg"
-                onError={e => { e.target.onerror = null; e.target.src = '/default-avatar.png'; }}
+                onError={handleAvatarError}
               />
               <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-1">{modalUser.name}</h3>
               <p className="text-gray-500 dark:text-gray-300">{modalUser.email}</p>

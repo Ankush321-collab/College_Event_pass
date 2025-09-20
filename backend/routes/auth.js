@@ -3,18 +3,10 @@ import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 import { authenticateToken } from '../middleware/auth.js';
 import multer from 'multer';
-import path from 'path';
+import cloudinary from '../config/cloudinary.js';
 
-// Multer setup for profile picture upload
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, 'uploads');
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, uniqueSuffix + '-' + file.originalname);
-  }
-});
+// Multer setup for memory storage
+const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
 const router = express.Router();
@@ -25,7 +17,16 @@ router.post('/register', upload.single('profilePic'), async (req, res) => {
     const { name, email, password, rollNumber, role } = req.body;
     let profilePic = null;
     if (req.file) {
-      profilePic = `/uploads/${req.file.filename}`;
+      // Convert buffer to base64
+      const b64 = Buffer.from(req.file.buffer).toString('base64');
+      const dataURI = `data:${req.file.mimetype};base64,${b64}`;
+      
+      // Upload to Cloudinary
+      const result = await cloudinary.uploader.upload(dataURI, {
+        folder: 'college_event_pass/profiles',
+        resource_type: 'auto'
+      });
+      profilePic = result.secure_url;
     }
 
     // Check if user already exists

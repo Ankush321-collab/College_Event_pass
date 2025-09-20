@@ -36,6 +36,15 @@ const eventSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
+  status: {
+    type: String,
+    enum: ['upcoming', 'ongoing', 'completed', 'archived'],
+    default: 'upcoming'
+  },
+  scheduledForDeletion: {
+    type: Date,
+    default: null
+  },
   createdAt: {
     type: Date,
     default: Date.now

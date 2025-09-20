@@ -12,6 +12,7 @@ import Event from './models/Event.js';
 import Registration from './models/Registration.js';
 import User from './models/User.js';
 import nodemailer from 'nodemailer';
+import { scheduleCleanup, runCleanup } from './services/eventCleanup.js';
 
 dotenv.config();
 
@@ -82,7 +83,13 @@ cron.schedule('0 * * * *', async () => {
 
 // MongoDB Connection
 mongoose.connect(process.env.MONGO_URL)
-  .then(() => console.log('🚀 Connected to MongoDB'))
+  .then(() => {
+    console.log('🚀 Connected to MongoDB');
+    // Initialize event cleanup service
+    scheduleCleanup();
+    // Run initial cleanup
+    runCleanup();
+  })
   .catch((err) => console.error('❌ MongoDB connection error:', err));
 
   app.use('/',(req,res)=>{

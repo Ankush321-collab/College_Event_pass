@@ -4,9 +4,22 @@ import { Calendar, MapPin, Users, ArrowRight } from 'lucide-react';
 
 const EventCard = ({ event, onRegister, isRegistered = false }) => {
   const eventDate = new Date(event.date);
-  const isUpcoming = eventDate > new Date();
+  const now = new Date();
   const spotsLeft = event.capacity - event.currentRegistrations;
   const isEventFull = spotsLeft === 0;
+  
+  const getEventStatus = () => {
+    if (event.status === 'archived' || event.scheduledForDeletion) {
+      return { text: 'Archived', color: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100' };
+    }
+    if (event.status === 'completed') {
+      return { text: 'Completed', color: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200' };
+    }
+    if (event.status === 'ongoing') {
+      return { text: 'In Progress', color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100' };
+    }
+    return { text: 'Upcoming', color: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100' };
+  };
 
   return (
     <div className="group relative bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl dark:hover:shadow-gray-700/50 transition-all duration-300 overflow-hidden transform hover:-translate-y-1 hover:scale-[1.02] border border-gray-200 dark:border-gray-700">
@@ -21,13 +34,14 @@ const EventCard = ({ event, onRegister, isRegistered = false }) => {
           />
           <div className="absolute inset-0 bg-gradient-to-t from-gray-900/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
           {/* Status badge */}
-          <span className={`absolute top-3 right-3 px-2.5 py-1 text-xs font-semibold rounded-full shadow-sm ${
-            isUpcoming 
-              ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100' 
-              : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
-          }`}>
-            {isUpcoming ? 'Upcoming' : 'Past'}
+          <span className={`absolute top-3 right-3 px-2.5 py-1 text-xs font-semibold rounded-full shadow-sm ${getEventStatus().color}`}>
+            {getEventStatus().text}
           </span>
+          {event.scheduledForDeletion && (
+            <span className="absolute top-12 right-3 px-2.5 py-1 text-xs bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100 rounded-full shadow-sm">
+              Deleting soon
+            </span>
+          )}
         </div>
       )}
       
